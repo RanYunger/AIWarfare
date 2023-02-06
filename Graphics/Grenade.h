@@ -1,16 +1,28 @@
 #pragma once
-#include "Bullet.h"
 
-const int NUM_BULLETS = 20;
+// Includes
+#include "Bullet.h"
+#include "Position.h"
+#include "Settings.h"
+
 class Grenade
 {
 private:
-	double x, y;
-	Bullet* bullets[NUM_BULLETS];
+	// Fields
+	Position position;
+	Bullet* shards[SHARDS_IN_GRENADE];
 public:
-	Grenade(double xx, double yy);
-	void draw();
-	bool explode(int maze[MAP_DIMENSION][MAP_DIMENSION]);
-	void SimulateExplosion(int maze[MAP_DIMENSION][MAP_DIMENSION], double security_map[MAP_DIMENSION][MAP_DIMENSION]);
-};
+	// Properties
+	Position GetPosition();
+	void SetPosition(Position* p);
 
+	// Consturctors & Destructors
+	Grenade();
+	Grenade(Position* p);
+	~Grenade();
+
+	// Methods
+	bool Explode(int map[MAP_DIMENSION][MAP_DIMENSION]);
+	void SimulateExplosion(int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_DIMENSION][MAP_DIMENSION]);
+	void Draw();
+};

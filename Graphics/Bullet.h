@@ -1,20 +1,36 @@
 #pragma once
-#include"settings.h"
-
-const double STEP = 0.2;
-const double MARK = 0.001;
+// Includes
+#include "Position.h"
+#include "Settings.h"
 
 class Bullet
 {
 private:
-	double x, y;
-	double dirx, diry;
-	double angle;
+	// Fields
+	Position position;
+	double angle, directionRow, directionColumn;
 public:
+	// Properties
+	Position GetPosition();
+	void SetPosition(Position* p);
+
+	double GetAngle();
+	void SetAngle(double a);
+
+	double GetDirectionRow();
+	void SetDirectionRow(double dR);
+
+	double GetDirectionColumn();
+	void SetDirectionColumn(double dC);
+
+	// Constructors & Destructors
 	Bullet();
-	Bullet(double xx, double yy, double alpha);
-	bool fire(int maze[MAP_DIMENSION][MAP_DIMENSION]);
-	void draw();
-	void SimulateFire(int maze[MAP_DIMENSION][MAP_DIMENSION], double security_map[MAP_DIMENSION][MAP_DIMENSION]);
+	Bullet(Position* p, double angle);
+	~Bullet();
+
+	// Methods
+	bool Fire(int map[MAP_DIMENSION][MAP_DIMENSION]);
+	void SimulateFire(int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_DIMENSION][MAP_DIMENSION]);
+	void Draw();
 };
 
