@@ -6,14 +6,14 @@
 #include <vector>
 #include <queue>
 #include "glut.h"
-#include "Node.h"
-#include "Room.h"
-#include "NodesComparator.h"
-#include "NPC.h"
-#include "Shooter.h"
-#include "Courier.h"
 #include "Bullet.h"
+#include "Courier.h"
 #include "Grenade.h"
+#include "NPC.h"
+#include "Node.h"
+#include "NodesComparator.h"
+#include "Room.h"
+#include "Shooter.h"
 #include "Settings.h"
 
 using namespace std;
@@ -22,65 +22,78 @@ using namespace std;
 bool gameOver = false, restart = false, foundRoad = false;
 int map[MAP_DIMENSION][MAP_DIMENSION] = { 0 }, mapCopy[MAP_DIMENSION][MAP_DIMENSION] = { 0 };
 double securityMap[MAP_DIMENSION][MAP_DIMENSION] = { 0 };
+
 Room rooms[MAX_ROOMS];
-Shooter* shooters[2 * MAX_SHOOTERS_IN_TEAM];
-Courier* couriers[2 * MAX_COURIERS_IN_TEAM];
+Shooter shooters[2 * MAX_SHOOTERS_IN_TEAM];
+Courier couriers[2 * MAX_COURIERS_IN_TEAM];
+
 vector<Position*> supplies;
 vector<Bullet*> bullets;
 vector<Grenade*> grenades;
-vector<Node*> visitedNodes; // vector to be used by both teams
+vector<Node*> visitedNodes;
 
 // Methods
 
 /// <summary>
-/// Calculates Manhattan distance between 2 coordinates.
+/// Retrieves the shooters of a given team.
 /// </summary>
-/// <param name="row1">The row offset of coordinate 1</param>
-/// <param name="column1">The column offset of coordinate 1</param>
-/// <param name="row2">The row offset of coordinate 2</param>
-/// <param name="column2">The column offset of coordinate 2</param>
-/// <returns>The Manhattan distance between the coordinates</returns>
-double ManhattanDistance(int row1, int column1, int row2, int column2)
+/// <param name="teamColor">The shooters' team</param>
+/// <returns>The shooters of the given team</returns>
+Shooter* GetShootersByTeam(int teamColor)
 {
-	return fabs(row1 - row2) + fabs(column1 - column2);
+	Shooter teamShooters[MAX_SHOOTERS_IN_TEAM];
+
+	for (int i = 0; i < 2 * MAX_SHOOTERS_IN_TEAM; i++)
+		if (shooters[i].GetTeam() == teamColor)
+			teamShooters[i % 2] = shooters[i];
+
+	return teamShooters;
 }
 
 /// <summary>
-/// Calculates Manhattan distance between 2 positions.
+/// Retrieves the courier of a given team.
 /// </summary>
-/// <param name="p1">The first position</param>
-/// <param name="p2">The second position</param>
-/// <returns>The Manhattan distance between the position</returns>
+/// <param name="teamColor">The courier's team</param>
+/// <returns>The courier of the given team</returns>
+Courier GetCourierByTeam(int teamColor)
+{
+	Courier teamCourier;
+
+	for (int i = 0; i < 2 * MAX_COURIERS_IN_TEAM; i++)
+		if (couriers[i].GetTeam() == teamColor)
+		{
+			teamCourier = couriers[i];
+			break;
+		}
+
+	return teamCourier;
+}
+
+/// <summary>
+/// Retrieves a team by its color.
+/// </summary>
+/// <param name="teamColor">The team's color</param>
+/// <returns>The NPC members of the team</returns>
+NPC* GetTeam(int teamColor)
+{
+	Shooter* teamShooters = GetShootersByTeam(teamColor);
+	Courier teamCourier = GetCourierByTeam(teamColor);
+	NPC team[MAX_SHOOTERS_IN_TEAM + MAX_COURIERS_IN_TEAM] = { teamShooters[0], teamShooters[1], teamCourier };
+
+	return team;
+}
+
+/// <summary>
+/// Calculates Manhattan distance between 2 locations.
+/// </summary>
+/// <param name="p1">The first location</param>
+/// <param name="p2">The second location</param>
+/// <returns>The Manhattan distance between the location</returns>
 double ManhattanDistance(Position p1, Position p2)
 {
-	return ManhattanDistance(p1.GetRow(), p1.GetColumn(), p2.GetRow(), p2.GetColumn());
-}
+	int row1 = p1.GetRow(), column1 = p1.GetColumn(), row2 = p2.GetRow(), column2 = p2.GetColumn();
 
-/// <summary>
-/// Finds the shooter nearest to a courier.
-/// </summary>
-/// <param name="courier">The courier that searches a teammate shooter</param>
-/// <returns>The nearest shooter of the courier's team</returns>
-Position FindNearestShooter(Courier* courier)
-{
-	int nearestOffset = 2;
-	double currentDistance, nearestDistance = (double)MAP_DIMENSION * MAP_DIMENSION;
-
-	for (int i = 0; i < MAX_SHOOTERS_IN_TEAM; i++)
-	{
-		// Validation
-		if (shooters[i] == nullptr)
-			continue;
-
-		currentDistance = ManhattanDistance(courier->GetPosition(), shooters[i]->GetPosition());
-		if (currentDistance < nearestDistance)
-		{
-			nearestOffset = i;
-			nearestDistance = currentDistance;
-		}
-	}
-
-	return shooters[nearestOffset]->GetPosition();
+	return fabs(row1 - row2) + fabs(column1 - column2);
 }
 
 /// <summary>
@@ -88,18 +101,20 @@ Position FindNearestShooter(Courier* courier)
 /// </summary>
 /// <param name="shooter">The shooter that searches an enemy</param>
 /// <returns>The nearest enemy to the shooter</returns>
-Position FindNearestEnemy(Shooter* shooter)
+NPC FindNearestEnemy(Shooter* shooter)
 {
-	int nearestOffset = 2;
+	int enemyTeamColor = shooter->GetTeam() == RED_TEAM ? BLUE_TEAM : RED_TEAM;
+	int nearestOffset = -1;
 	double currentDistance, nearestDistance = (double)MAP_DIMENSION * MAP_DIMENSION;
+	NPC* enemyTeam = GetTeam(enemyTeamColor);
 
-	for (int i = 0; i < 2 * MAX_SHOOTERS_IN_TEAM; i++)
+	for (int i = 0; i < 2 * MAX_SHOOTERS_IN_TEAM + MAX_COURIERS_IN_TEAM; i++)
 	{
 		// Validation
-		if ((shooters[i] == nullptr) || (shooters[i]->GetTeam() == shooter->GetTeam()))
+		if (enemyTeam[i].GetHealth() <= 0)
 			continue;
 
-		currentDistance = ManhattanDistance(shooter->GetPosition(), shooters[i]->GetPosition());
+		currentDistance = ManhattanDistance(shooter->GetLocation(), enemyTeam[i].GetLocation());
 		if (currentDistance < nearestDistance)
 		{
 			nearestOffset = i;
@@ -107,7 +122,58 @@ Position FindNearestEnemy(Shooter* shooter)
 		}
 	}
 
-	return shooters[nearestOffset]->GetPosition();
+	return enemyTeam[nearestOffset];
+}
+
+/// <summary>
+/// Finds the shooter nearest to a courier.
+/// </summary>
+/// <param name="courier">The courier that searches a teammate shooter</param>
+/// <returns>The nearest shooter of the courier's team</returns>
+Shooter FindNearestShooter(Courier* courier)
+{
+	Shooter* teamShooters = GetShootersByTeam(courier->GetTeam());
+	int nearestOffset = -1;
+	double currentDistance, nearestDistance = (double)MAP_DIMENSION * MAP_DIMENSION;
+
+	for (int i = 0; i < MAX_SHOOTERS_IN_TEAM; i++)
+	{
+		// Validation
+		if (teamShooters[i].GetHealth() <= 0)
+			continue;
+
+		currentDistance = ManhattanDistance(courier->GetLocation(), teamShooters[i].GetLocation());
+		if (currentDistance < nearestDistance)
+		{
+			nearestOffset = i;
+			nearestDistance = currentDistance;
+		}
+	}
+
+	return teamShooters[nearestOffset];
+}
+
+/// <summary>
+/// Finds the supply nearest to a given courier.
+/// </summary>
+/// <param name="courier">The courier that searches for supplies</param>
+/// <returns>The location of the nearest supply</returns>
+Position FindNearestSupply(Courier* courier)
+{
+	int nearestOffset = -1;
+	double currentDistance, nearestDistance = (double)MAP_DIMENSION * MAP_DIMENSION;
+
+	for (int i = 0; i < supplies.size(); i++)
+	{
+		currentDistance = ManhattanDistance(courier->GetLocation(), *supplies[i]);
+		if (currentDistance < nearestDistance)
+		{
+			nearestOffset = i;
+			nearestDistance = currentDistance;
+		}
+	}
+
+	return *supplies[nearestOffset];
 }
 
 /// <summary>
@@ -135,136 +201,23 @@ Node* FindMinimalFNode()
 	return minimalNodePtr;
 }
 
-Position* CheckNeighborAStar(Position* source, Position* destination, Node* currentNode)
-{
-	int sourceRow, sourceColumn, destinationRow, destinationColumn;
-	Position position;
-
-	if (source == destination)
-	{
-		foundRoad = true;
-
-		if (currentNode->GetParent() == nullptr)
-		{
-			position = currentNode->GetSourcePosition();
-
-			return &position;
-		}
-
-		while (currentNode->GetParent()->GetParent() != nullptr)
-			currentNode = currentNode->GetParent();
-
-		position = currentNode->GetSourcePosition();
-
-		return &position;
-	}
-
-	destinationRow = currentNode->GetSourcePosition().GetRow();
-	destinationColumn = currentNode->GetSourcePosition().GetColumn();
-
-	visitedNodes.push_back(new Node(source, destination, currentNode, currentNode->GetG() + securityMap[destinationRow][destinationColumn]));
-
-	return nullptr;
-}
-
-/// <summary>
-/// Retrieves the next position an NPC needs to step into.
-/// </summary>
-/// <param name="npc">The npc</param>
-/// <returns>The NPC's next position</returns>
-Position* GetNPCNextStep(NPC* npc)
-{
-	Position sourcePosition = npc->GetPosition(), destinationPosition = npc->GetDestination();
-	Position* stepPtr = nullptr;
-
-	Node* currentNode = new Node(&sourcePosition, &destinationPosition, nullptr, 0);
-	double defaultValue = (double)MAP_DIMENSION * MAP_DIMENSION;
-
-	int row, column;
-
-	foundRoad = false;
-	visitedNodes.clear();
-	visitedNodes.push_back(currentNode);
-
-	while (!foundRoad)
-	{
-		if (visitedNodes.empty())
-		{
-			foundRoad = true; // to stop iterating
-			cout << "CRITICAL ERROR: NPC couldn't find ANY road to destination???\n";
-
-			return nullptr;
-		}
-		else
-		{
-			currentNode = FindMinimalFNode();
-			sourcePosition = currentNode->GetSourcePosition();
-			destinationPosition = currentNode->GetDestinationPosition();
-			row = (int)sourcePosition.GetRow();
-			column = (int)sourcePosition.GetColumn();
-
-
-			if ((!foundRoad) && (securityMap[row - 1][column] < defaultValue))
-			{
-				stepPtr = CheckNeighborAStar(new Position((double)row - 1, column), &destinationPosition, currentNode);
-				if (stepPtr != nullptr)
-					return stepPtr;
-			}
-
-			if ((!foundRoad) && (securityMap[row + 1][column] < defaultValue))
-			{
-				stepPtr = CheckNeighborAStar(new Position((double)row + 1, column), &destinationPosition, currentNode);
-				if (stepPtr != nullptr)
-					return stepPtr;
-			}
-
-			if ((!foundRoad) && (securityMap[row][column - 1] < defaultValue))
-			{
-				stepPtr = CheckNeighborAStar(new Position(row, (double)column - 1), &destinationPosition, currentNode);
-				if (stepPtr != nullptr)
-					return stepPtr;
-			}
-
-			if ((!foundRoad) && (securityMap[row][column + 1] < defaultValue))
-			{
-				stepPtr = CheckNeighborAStar(new Position(row, (double)column + 1), &destinationPosition, currentNode);
-				if (stepPtr != nullptr)
-					return stepPtr;
-			}
-		}
-	}
-
-	return stepPtr;
-}
-
 // Map
 
 /// <summary>
-/// Indicates whether an NPC can spawn in a given position.
+/// Indicates whether an NPC can spawn in a given location.
 /// </summary>
 /// <param name="spawnPosition">The spawn point to check</param>
 /// <param name="teamColor">The NPC's team</param>
-/// <returns>True if the NPC can spawn in the given position, False otherwise</returns>
+/// <returns>True if the NPC can spawn in the given location, False otherwise</returns>
 bool IsValidNPCSpawn(Position spawnPosition, int teamColor)
 {
-	Position npcPosition;
+	NPC* team = GetTeam(teamColor);
+	Position npcLocation;
 
-	// Checks whether any teammate is already in the designated spawn position
-	for (int i = 0; i < 2 * MAX_SHOOTERS_IN_TEAM; i++)
-		if ((shooters[i] != nullptr) && (shooters[i]->GetTeam() == teamColor))
-		{
-			npcPosition = shooters[i]->GetPosition();
-			if (spawnPosition == npcPosition)
-				return false;
-		}
-
-	for (int i = 0; i < 2 * MAX_COURIERS_IN_TEAM; i++)
-		if ((couriers[i] != nullptr) && (couriers[i]->GetTeam() == teamColor))
-		{
-			npcPosition = couriers[i]->GetPosition();
-			if (spawnPosition == npcPosition)
-				return false;
-		}
+	// Checks whether any teammate is already in the designated spawn location
+	for (int i = 0; i < MAX_SHOOTERS_IN_TEAM + MAX_COURIERS_IN_TEAM; i++)
+		if ((team[i].GetHealth() > 0) && (team[i].GetLocation() == npcLocation))
+			return false;
 
 	return true;
 }
@@ -277,18 +230,18 @@ bool IsValidNPCSpawn(Position spawnPosition, int teamColor)
 /// <returns>A valid spawn point in the Room</returns>
 Position RandomizeNPCSpawn(Room* room, int teamColor)
 {
-	Position spawnPosition;
-	int roomRowStart = fabs(room->GetCenterPosition().GetRow() - room->GetHeight() / 2);
-	int roomColumnStart = fabs(room->GetCenterPosition().GetColumn() - room->GetWidth() / 2);
+	Position centerPosition = room->GetCenterPosition(), spawnLocation;
+	int roomRowStart = fabs(centerPosition.GetRow() - room->GetHeight() / 2);
+	int roomColumnStart = fabs(centerPosition.GetColumn() - room->GetWidth() / 2);
 
 	do
 	{
-		spawnPosition.SetRow((double)roomRowStart + rand() % room->GetHeight());
-		spawnPosition.SetColumn((double)roomColumnStart + rand() % room->GetWidth());
-	} while ((map[(int)spawnPosition.GetRow()][(int)spawnPosition.GetColumn()] == WALL)
-		|| (!IsValidNPCSpawn(spawnPosition, teamColor)));
+		spawnLocation.SetRow((double)roomRowStart + rand() % room->GetHeight());
+		spawnLocation.SetColumn((double)roomColumnStart + rand() % room->GetWidth());
+	} while ((map[(int)spawnLocation.GetRow()][(int)spawnLocation.GetColumn()] == WALL)
+		|| (!IsValidNPCSpawn(spawnLocation, teamColor)));
 
-	return spawnPosition;
+	return spawnLocation;
 }
 
 /// <summary>
@@ -331,8 +284,8 @@ void UpdateNeighbor(Node* neighborPtr, priority_queue <Node*, vector<Node*>, Nod
 /// <summary>
 /// Adds a neighbor node to the priority queue and node vectors.
 /// </summary>
-/// <param name="source">The neighbor's source position</param>
-/// <param name="destination">The neighbor's destination position</param>
+/// <param name="source">The neighbor's source location</param>
+/// <param name="destination">The neighbor's destination location</param>
 /// <param name="parent">The neighbor's parent</param>
 /// <param name="priorityQueue">The priority queue managing the nodes</param>
 /// <param name="grays">The vector of in-process nodes</param>
@@ -364,22 +317,22 @@ void AddNeighbor(Position* source, Position* destination, Node* parent,
 /// <summary>
 /// Given an Node, paints the path in the maze as a Room
 /// </summary>
-/// <param name="currentNodePtr">Pointer to the last Node in the path</param>
-void RestoreTunnelPath(Node* currentNodePtr)
+/// <param name="currentNode">Pointer to the last Node in the path</param>
+void RestoreTunnelPath(Node* currentNode)
 {
-	Position position;
+	Position location;
 
-	while (currentNodePtr->GetParent() != nullptr)
+	while (currentNode->GetParent() != nullptr)
 	{
-		position = currentNodePtr->GetSourcePosition();
-		map[(int)position.GetRow()][(int)position.GetColumn()] = SPACE;
+		location = currentNode->GetSourcePosition();
+		map[(int)location.GetRow()][(int)location.GetColumn()] = SPACE;
 
-		currentNodePtr = currentNodePtr->GetParent();
+		currentNode = currentNode->GetParent();
 	}
 }
 
 /// <summary>
-/// Digs a tunnel between 2 existing rooms.
+/// Digs a tunnel between two existing rooms.
 /// </summary>
 /// <param name="room1ID">The first room's ID</param>
 /// <param name="room2ID">The second room's ID</param>
@@ -485,6 +438,22 @@ void PlaceObstacles(Room* room)
 }
 
 /// <summary>
+/// Indicates whether a supply can be placed at a specific location.
+/// </summary>
+/// <param name="row">The location's row offset</param>
+/// <param name="column">The location's column offset</param>
+/// <returns>True if the supply can be placed, False otherwise</returns>
+bool CanPlaceSupply(int row, int column)
+{
+	if (map[row][column] != SPACE)
+		return false;
+	if ((map[row - 1][column] != SPACE) || (map[row + 1][column] != SPACE) || (map[row][column - 1] != SPACE) || (map[row][column + 1] != SPACE))
+		return false;
+
+	return true;
+}
+
+/// <summary>
 /// Places ammo and meds in a given room.
 /// </summary>
 /// <param name="room">The room to place supplies in</param>
@@ -497,29 +466,30 @@ void PlaceSupplies(Room* room)
 	int ammosCount = rand() % MAX_ARMS, medsCount = rand() % MAX_MEDS_IN_ROOM;
 	int row, column;
 
-	// Fills Room with ammo
+	// Fills the room with ammo
 	for (int i = 0; i < ammosCount; i++)
 	{
 		do
 		{
 			row = roomRowStart + rand() % (roomRowEnd + 1);
 			column = roomColumnStart + rand() % (roomColumnEnd + 1);
-		} while (map[row][column] != SPACE);
+		} while (!CanPlaceSupply(row, column));
 
 		map[row][column] = ARMS;
 		supplies.push_back(new Position(row, column));
 	}
 
-	// Fills Room with meds
+	// Fills the room with meds
 	for (int i = 0; i < medsCount; i++)
 	{
 		do
 		{
 			row = roomRowStart + rand() % (roomRowEnd + 1);
 			column = roomColumnStart + rand() % (roomColumnEnd + 1);
-		} while (map[row][column] != SPACE);
+		} while (!CanPlaceSupply(row, column));
 
 		map[row][column] = MEDS;
+		supplies.push_back(new Position(row, column));
 	}
 }
 
@@ -578,7 +548,7 @@ void InitRooms()
 	// Fills each room with obstacles and supplies
 	for (int i = 0; i < MAX_ROOMS; i++)
 	{
-		PlaceObstacles(&rooms[i]);
+		//PlaceObstacles(&rooms[i]);
 		PlaceSupplies(&rooms[i]);
 	}
 }
@@ -589,7 +559,7 @@ void InitRooms()
 /// </summary>
 void InitGame()
 {
-	Position spawnPosition;
+	Position spawnLocation;
 	int redTeamSpawnRoom, blueTeamSpawnRoom;
 
 	// Chooses rooms to spawn both teams
@@ -599,25 +569,30 @@ void InitGame()
 		blueTeamSpawnRoom = rand() % MAX_ROOMS;
 	} while (redTeamSpawnRoom == blueTeamSpawnRoom);
 
-	// Initiates 4 shooters and 2 couriers (2 +  on each team
+	// Initiates 4 shooters (2 on each team)
 	for (int i = 0; i < MAX_SHOOTERS_IN_TEAM * 2; i++)
 	{
-		spawnPosition = RandomizeNPCSpawn(i < MAX_SHOOTERS_IN_TEAM ? &rooms[redTeamSpawnRoom] : &rooms[blueTeamSpawnRoom],
+		spawnLocation = RandomizeNPCSpawn(i < MAX_SHOOTERS_IN_TEAM ? &rooms[redTeamSpawnRoom] : &rooms[blueTeamSpawnRoom],
 			i < MAX_SHOOTERS_IN_TEAM ? RED_TEAM : BLUE_TEAM);
-		shooters[i] = new Shooter(spawnPosition, i < MAX_SHOOTERS_IN_TEAM ? RED_TEAM : BLUE_TEAM,
-			i < MAX_SHOOTERS_IN_TEAM ? redTeamSpawnRoom : blueTeamSpawnRoom);
 
-		map[(int)spawnPosition.GetRow()][(int)spawnPosition.GetColumn()] = shooters[i]->GetTeam();
+		shooters[i].SetLocation(spawnLocation);
+		shooters[i].SetTeam(i < MAX_SHOOTERS_IN_TEAM ? RED_TEAM : BLUE_TEAM);
+		shooters[i].SetRoom(i < MAX_SHOOTERS_IN_TEAM ? redTeamSpawnRoom : blueTeamSpawnRoom);
+
+		map[(int)spawnLocation.GetRow()][(int)spawnLocation.GetColumn()] = shooters[i].GetTeam();
 	}
 
+	// Initiates 2 couriers (1 on each team)
 	for (int i = 0; i < MAX_COURIERS_IN_TEAM * 2; i++)
 	{
-		spawnPosition = RandomizeNPCSpawn(i < MAX_COURIERS_IN_TEAM ? &rooms[redTeamSpawnRoom] : &rooms[blueTeamSpawnRoom],
+		spawnLocation = RandomizeNPCSpawn(i < MAX_COURIERS_IN_TEAM ? &rooms[redTeamSpawnRoom] : &rooms[blueTeamSpawnRoom],
 			i < MAX_COURIERS_IN_TEAM ? RED_TEAM : BLUE_TEAM);
-		couriers[i] = new Courier(spawnPosition, i < MAX_COURIERS_IN_TEAM ? RED_TEAM : BLUE_TEAM,
-			i < MAX_COURIERS_IN_TEAM ? redTeamSpawnRoom : blueTeamSpawnRoom);
 
-		map[(int)spawnPosition.GetRow()][(int)spawnPosition.GetColumn()] = couriers[i]->GetTeam();
+		couriers[i].SetLocation(spawnLocation);
+		couriers[i].SetTeam(i < MAX_COURIERS_IN_TEAM ? RED_TEAM : BLUE_TEAM);
+		couriers[i].SetRoom(i < MAX_COURIERS_IN_TEAM ? redTeamSpawnRoom : blueTeamSpawnRoom);
+
+		map[(int)spawnLocation.GetRow()][(int)spawnLocation.GetColumn()] = couriers[i].GetTeam();
 	}
 }
 
@@ -715,67 +690,62 @@ void Restart()
 /// <param name="supplyColumn">The supply's column offset</param>
 void TakeSupply(Courier* courier, int supplyRow, int supplyColumn)
 {
-	Position* supplyPosition = new Position(supplyRow, supplyColumn);
-	int eraseOffset = -1;
-
 	// Takes the supply
 	if (map[supplyRow][supplyColumn] == ARMS)
-		courier->TakeArms();
+		courier->SetArms(courier->GetArms() + 1);
 	else if (map[supplyRow][supplyColumn] == MEDS)
-		courier->TakeMeds();
+		courier->SetMeds(courier->GetMeds() + 1);
 
 	// Removes the supply from vector
 	for (int i = 0; i < supplies.size(); i++)
-		if (supplies[i] == supplyPosition)
+		if ((supplies[i]->GetRow() == supplyRow) && (supplies[i]->GetColumn() == supplyColumn))
 		{
-			eraseOffset = i;
+			supplies.erase(supplies.begin() + i);
 			break;
 		}
-
-	supplies.erase(supplies.begin() + eraseOffset);
 }
 
 /// <summary>
 /// Activates a shooter.
 /// </summary>
 /// <param name="shooter">The shooter to activate</param>
-/// <param name="newPosition">The shooter's new position</param>
-void MoveShooter(Shooter* shooter, Position newPosition)
+/// <param name="newLocation">The shooter's new location</param>
+void MoveShooter(Shooter* shooter, Position newLocation)
 {
-	Position oldPosition = shooter->GetPosition();
-	int oldRow = (int)oldPosition.GetRow(), oldColumn = (int)oldPosition.GetColumn();
-	int newRow = (int)newPosition.GetRow(), newColumn = (int)newPosition.GetColumn();
+	Position oldLocation = shooter->GetLocation();
+	int oldRow = (int)oldLocation.GetRow(), oldColumn = (int)oldLocation.GetColumn();
+	int newRow = (int)newLocation.GetRow(), newColumn = (int)newLocation.GetColumn();
 
 	// Moves color-wise
 	map[oldRow][oldColumn] = shooter->GetPreviousCellContent(); // The cell shooter leaves returns to its original color
-	shooter->SetPreviousCellContent(map[newRow][newColumn]); // shooter remembers the color of the new cell
-	map[newRow][newColumn] = shooter->GetTeam(); // shooter occupies palastine
+	shooter->SetPreviousCellContent(map[newRow][newColumn]);	// shooter remembers the color of the new cell
+	map[newRow][newColumn] = shooter->GetTeam();
 
-	// Moves position-wise
-	shooter->SetPosition(newPosition);
+	// Moves location-wise
+	shooter->SetLocation(newLocation);
 }
 
 /// <summary>
 /// Activates a courier.
 /// </summary>
 /// <param name="courier">The courier to activate</param>
-/// <param name="newPosition">The courier's new position</param>
-void MoveCourier(Courier* courier, Position newPosition)
+/// <param name="newLocation">The courier's new location</param>
+void MoveCourier(Courier* courier, Position newLocation)
 {
-	Position oldPosition = courier->GetPosition();
-	int oldRow = (int)oldPosition.GetRow(), oldColumn = (int)oldPosition.GetColumn();
-	int newRow = (int)newPosition.GetRow(), newColumn = (int)newPosition.GetColumn();
+	Position oldLocation = courier->GetLocation();
+	int oldRow = (int)oldLocation.GetRow(), oldColumn = (int)oldLocation.GetColumn();
+	int newRow = (int)newLocation.GetRow(), newColumn = (int)newLocation.GetColumn();
 
-	// Collects supplies
+	// Collects supply (if there's one)
 	if ((map[newRow][newColumn] == ARMS) || (map[newRow][newColumn] == MEDS))
 		TakeSupply(courier, newRow, newColumn);
 
 	// Moves color-wise
-	map[oldRow][oldColumn] = SPACE; // the space courier leaves has to be a space.
+	map[oldRow][oldColumn] = SPACE;
 	map[newRow][newColumn] = courier->GetTeam();
 
-	// Moves position-wise
-	courier->SetPosition(newPosition);
+	// Moves location-wise
+	courier->SetLocation(newLocation);
 }
 
 /// <summary>
@@ -793,107 +763,43 @@ int FindNPCContainer(NPC* npc)
 }
 
 /// <summary>
-/// Indicates whether there's a line of sight between two positions.
+/// Finds the next location a given NPC should move to.
 /// </summary>
-/// <param name="p1">The first position</param>
-/// <param name="p2">The second position</param>
-/// <returns>True if there's a line of sight between the two positions, False otherwise</returns>
-bool HasLineOfSight(Position p1, Position p2)
+/// <param name="npc">The NPC to find the next location of</param>
+/// <returns>The NPC's next location</returns>
+Position FindNextLocation(NPC* npc)
 {
-	int rowDiff = p2.GetRow() - p1.GetRow();
-	int colDiff = p2.GetColumn() - p1.GetColumn();
-	double length = sqrt(rowDiff * rowDiff + colDiff * colDiff);
-	double dRow = rowDiff / length, dColumn = colDiff / length;
+	Position source = npc->GetLocation(), destination = npc->GetDestination();
 
-	for (double row = p1.GetRow(), column = p1.GetColumn(); ((int)row != p2.GetRow()) && ((int)column != p2.GetColumn());
-		row += dRow, column += dColumn)
-		if (map[(int)round(row)][(int)round(column)] == WALL)
-			return false;
+	// TODO: COMPLETE
 
-	return true;
+	return source;
 }
 
 /// <summary>
 /// Activates a shooter by its state.
 /// </summary>
 /// <param name="shooter">The shooter to activate</param>
-void ActivateShooter(Shooter* shooter)
+void IterateShooter(Shooter* shooter)
 {
-	int row = (int)shooter->GetPosition().GetRow();
-	int column = (int)shooter->GetPosition().GetColumn();
-	Position attackPosition, enemyPosition;
-	Position* newPosition = GetNPCNextStep((NPC*)shooter);
+	// Validation
+	if (shooter->GetHealth() <= 0)
+		return;
 
-	if (shooter->IsSearchingCourier())
-	{
-		for (int i = 0; i < 2 * MAX_COURIERS_IN_TEAM; i++)
-			if ((couriers[i] != nullptr) && (couriers[i]->GetTeam() == shooter->GetTeam()))
-			{
-				shooter->SetDestination(couriers[i]->GetPosition());
-				break;
-			}
-	}
-	else if (shooter->IsAttacking())
-	{
-		for (int i = 0; i < 2 * MAX_SHOOTERS_IN_TEAM; i++)
-		{
-			if ((shooters[i] != nullptr) && (shooters[i]->GetTeam() != shooter->GetTeam()))
-			{
-				attackPosition = shooters[i]->GetPosition();
-
-				// Attacks the enemy if there's a line of sight
-				if (HasLineOfSight(shooter->GetPosition(), attackPosition))
-					shooter->Attack(attackPosition);
-				else
-					shooter->GetState()->Transform(shooter);
-			}
-		}
-
-		for (int i = 0; i < 2 * MAX_COURIERS_IN_TEAM; i++)
-		{
-			if ((couriers[i] != nullptr) && (couriers[i]->GetTeam() != shooter->GetTeam()))
-			{
-				attackPosition = couriers[i]->GetPosition();
-
-				// Attacks the enemy if there's a line of sight
-				if (HasLineOfSight(shooter->GetPosition(), attackPosition))
-					shooter->Attack(attackPosition);
-				else
-					shooter->GetState()->Transform(shooter);
-			}
-		}
-	}
-	else if (shooter->IsSearchingEnemy())
-	{
-		enemyPosition = FindNearestEnemy(shooter);
-		if (HasLineOfSight(shooter->GetPosition(), enemyPosition))
-			shooter->GetState()->Transform(shooter);
-		else
-			shooter->SetDestination(enemyPosition);
-	}
-	else
-	{
-		cout << "SEVERE ERROR OCCURRED\nA shooter has no state. in function 'ActivateShooter'\n";
-	}
-
-	MoveShooter(shooter, *newPosition);
-
-	shooter->SetRoom(FindNPCContainer(shooter));
+	// TODO: COMPLETE
 }
 
 /// <summary>
 /// Activates a courier by its state.
 /// </summary>
 /// <param name="courier">The courier to activate</param>
-void ActivateCourier(Courier* courier)
+void IterateCourier(Courier* courier)
 {
-	int row = (int)courier->GetPosition().GetRow();
-	int column = (int)courier->GetPosition().GetColumn();
-	Position* newPosition = GetNPCNextStep((NPC*)courier);
+	// Validation
+	if (courier->GetHealth() <= 0)
+		return;
 
-	MoveCourier(courier, *newPosition);
-
-	courier->SetRoom(FindNPCContainer(courier));
+	// TODO: COMPLETE
 }
 
 /// <summary>
@@ -902,43 +808,14 @@ void ActivateCourier(Courier* courier)
 /// <param name="teamColor">The team's color</param>
 void IterateTeam(int teamColor)
 {
-	int row, column;
+	Shooter* teamShooters = GetShootersByTeam(teamColor);
+	Courier teamCourier = GetCourierByTeam(teamColor);
 
-	// Checks whether any shooter has died
-	for (int i = 0; i < 2 * MAX_SHOOTERS_IN_TEAM; i++)
-	{
-		if (shooters[i] == nullptr)
-			continue;
+	// Iterates team members
+	for (int i = 0; i < MAX_SHOOTERS_IN_TEAM; i++)
+		IterateShooter(&teamShooters[i]);
 
-		if (shooters[i]->GetTeam() == teamColor)
-		{
-			if (shooters[i]->GetHealth() <= 0)
-			{
-				shooters[i]->~Shooter();
-				shooters[i] = nullptr;
-			}
-			//else
-			//	ActivateShooter(shooters[i]);
-		}
-	}
-
-	// Checks whether any of the couriers has died
-	for (int i = 0; i < 2 * MAX_COURIERS_IN_TEAM; i++)
-	{
-		if (couriers[i] == nullptr)
-			continue;
-
-		if (couriers[i]->GetTeam() == teamColor)
-		{
-			if (couriers[i]->GetHealth() <= 0)
-			{
-				couriers[i]->~Courier();
-				couriers[i] = nullptr;
-			}
-			//else
-			//	ActivateCourier(couriers[i]);
-		}
-	}
+	IterateCourier(&teamCourier);
 }
 
 /// <summary>
@@ -1002,14 +879,6 @@ void idle()
 	glutPostRedisplay(); // indirect call to display
 }
 
-void mouse(int button, int state, int x, int y)
-{
-	//if ((button == GLUT_LEFT_BUTTON) && (state == GLUT_DOWN))
-	//{
-	//	pb = new Bullet(x * MAPDIMENSION / (double)WINDOWWIDTH, y * MAPDIMENSION / (double)WINDOWHEIGHT, (rand() % 360) * PI / 180.0);
-	//}
-}
-
 int main(int argc, char* argv[])
 {
 	glutInit(&argc, argv);
@@ -1019,7 +888,6 @@ int main(int argc, char* argv[])
 	glutCreateWindow("Red VS Blue");
 	glutDisplayFunc(display); // display is the refresh function
 	glutIdleFunc(idle);
-	glutMouseFunc(mouse);
 
 	// Create menu to ask user which algorithm they'd like to activate
 	glutCreateMenu(CreateMenu);

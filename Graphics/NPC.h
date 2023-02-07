@@ -3,21 +3,22 @@
 // Includes
 #include "Position.h"
 #include "State.h"
+#include "Settings.h"
 
 class State;
 
 class NPC
 {
-private:
+protected:
 	// Fields
-	Position position, destination;
+	Position location, destination;
 	State* state;
-	int health, team, room;
+	int health, team, room, arms, meds;
 
 public:
 	// Properties
-	Position GetPosition();
-	void SetPosition(Position p);
+	Position GetLocation();
+	void SetLocation(Position l);
 
 	Position GetDestination();
 	void SetDestination(Position d);
@@ -34,11 +35,25 @@ public:
 	int GetRoom();
 	void SetRoom(int r);
 
+	int GetArms();
+	void SetArms(int a);
+
+	int GetMeds();
+	void SetMeds(int m);
+
 	// Constructors & Destructors
 	NPC();
-	NPC(Position p, int t, int r);
+	NPC(Position l, int t, int r);
 	~NPC();
 
 	// Methods
 	void TakeDamage(int damage);
+	
+	void GiveArms(NPC* teammate);
+	void TakeArms(NPC* teammate);
+
+	void GiveMeds(NPC* teammate);
+	void TakeMeds(NPC* teammate);
+
+	bool HasLineOfSight(int map[MAP_DIMENSION][MAP_DIMENSION], NPC* other);
 };

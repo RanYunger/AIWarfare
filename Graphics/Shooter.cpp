@@ -1,24 +1,15 @@
 // Includes
 #include "Shooter.h"
 
+#include <math.h>
 #include <stdlib.h>
 #include "Bullet.h"
 #include "Grenade.h"
-#include "SearchEnemyState.h"
 #include "Settings.h"
 
 // Properties
-NPC* Shooter::GetTarget() { return target; }
-void Shooter::SetTarget(NPC* t) { target = t; }
-
-int Shooter::GetArms() { return arms; }
-void Shooter::SetArms(int a) { arms = a; }
-
 int Shooter::GetPreviousCellContent() { return previousCellContent; }
 void Shooter::SetPreviousCellContent(int c) { previousCellContent = c; }
-
-bool Shooter::IsSearchingCourier() { return isSearchingCourier; }
-void Shooter::SetIsSearchingCourier(bool i) { isSearchingCourier = i; }
 
 bool Shooter::IsSearchingEnemy() { return isSearchingEnemy; }
 void Shooter::SetIsSearchingEnemy(bool i) { isSearchingEnemy = i; }
@@ -29,55 +20,50 @@ void Shooter::SetIsAttacking(bool i) { isAttacking = i; }
 // Constructors & Destructors
 Shooter::Shooter()
 	: NPC() {}
-Shooter::Shooter(Position p, int t, int r)
-	: NPC(p, t, r)
+Shooter::Shooter(Position l, int t, int r)
+	: NPC(l, t, r)
 {
-	SetTarget(nullptr);
 	SetArms(MAX_ARMS);
+	SetMeds(MAX_MEDS);
+
 	SetPreviousCellContent(SPACE);
 
-	SetState((State*)new SearchEnemyState());
-	GetState()->OnEnter(this);
+	SetState(nullptr); //(State*)new SearchEnemyState());
+	//GetState()->OnEnter(this);
 }
 Shooter::~Shooter() {}
 
 // Methods
 
 /// <summary>
-/// Increases the arms counter.
+/// Shoots a bullet towards a given destination.
 /// </summary>
-void Shooter::TakeArms() { SetArms(arms + 1 >= MAX_ARMS ? MAX_ARMS : arms + 1); }
-
-/// <summary>
-/// Shoots a bullet and decreases the arms counter.
-/// </summary>
-void Shooter::Shoot(Position attackPosition)
+/// <param name="destination">The position the bullet is heading to</param>
+void Shooter::Shoot(Position destination)
 {
 	// TODO: COMPLETE
-	//Bullet* b = new Bullet();
-
-	SetArms(arms - 1 <= 0 ? 0 : arms - 1);
 }
 
 /// <summary>
-/// Throws a granade and decreases the arms counter.
+/// Throws a grenade towards a given destination.
 /// </summary>
-void Shooter::ThrowGranade(Position attackPosition)
+/// <param name="destination">The position the grenade is heading to</param>
+void Shooter::ThrowGranade(Position destination)
 {
 	// TODO: COMPLETE
-	//Grenade* g = new Grenade();
-
-	SetArms(arms - 1 <= 0 ? 0 : arms - 1);
+	//Bullet* bullet = new Bullet(this, &location, (rand() % 360) * PI / 180.0);
 }
 
 /// <summary>
 /// Activates a random attack.
 /// </summary>
-/// <param name="attackPosition">The position the attack is heading to</param>
-void Shooter::Attack(Position attackPosition)
+/// <param name="destination">The position the attack is heading to</param>
+void Shooter::Attack(Position destination)
 {
+	arms = arms - 1 <= 0 ? 0 : arms -1;
+
 	if (rand() % 2)
-		Shoot(attackPosition);
+		Shoot(destination);
 	else
-		ThrowGranade(attackPosition);
+		ThrowGranade(destination);
 }

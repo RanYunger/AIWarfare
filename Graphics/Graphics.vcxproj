@@ -118,7 +118,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="AttackState.cpp" />
     <ClCompile Include="Bullet.cpp" />
     <ClCompile Include="CollectSuppliesState.cpp" />
     <ClCompile Include="Courier.cpp" />
@@ -129,15 +128,10 @@
     <ClCompile Include="NPC.cpp" />
     <ClCompile Include="Position.cpp" />
     <ClCompile Include="Room.cpp" />
-    <ClCompile Include="SearchCourierState.cpp" />
-    <ClCompile Include="SearchEnemyState.cpp" />
-    <ClCompile Include="SearchShooterState.cpp" />
-    <ClCompile Include="SelfHealState.cpp" />
     <ClCompile Include="Shooter.cpp" />
     <ClCompile Include="State.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AttackState.h" />
     <ClInclude Include="Bullet.h" />
     <ClInclude Include="CollectSuppliesState.h" />
     <ClInclude Include="Courier.h" />
@@ -147,10 +141,6 @@
     <ClInclude Include="NPC.h" />
     <ClInclude Include="Position.h" />
     <ClInclude Include="Room.h" />
-    <ClInclude Include="SearchCourierState.h" />
-    <ClInclude Include="SearchEnemyState.h" />
-    <ClInclude Include="SearchShooterState.h" />
-    <ClInclude Include="SelfHealState.h" />
     <ClInclude Include="Settings.h" />
     <ClInclude Include="Shooter.h" />
     <ClInclude Include="State.h" />

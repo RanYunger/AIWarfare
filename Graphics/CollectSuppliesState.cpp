@@ -2,8 +2,6 @@
 #include "CollectSuppliesState.h"
 
 #include <stdlib.h>
-#include "SelfHealState.h"
-#include "SearchShooterState.h"
 #include "Courier.h"
 
 // Properties
@@ -15,7 +13,7 @@ CollectSuppliesState::~CollectSuppliesState() {}
 // Methods
 void CollectSuppliesState::Transform(NPC* npc)
 {
-	State* nextState = npc->GetHealth() < (10 + rand() % 10) ? (State*)new SelfHealState() : (State*)new SearchShooterState();
+	State* nextState = nullptr; //npc->GetHealth() < (10 + rand() % 10) ? (State*)new SelfHealState() : (State*)new SearchShooterState();
 
 	OnExit(npc);
 

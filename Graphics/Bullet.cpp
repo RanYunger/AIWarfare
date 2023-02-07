@@ -4,8 +4,11 @@
 #include "glut.h"
 
 // Properties
-Position Bullet::GetPosition() { return position; }
-void Bullet::SetPosition(Position* p) { position = *p; }
+Shooter Bullet::GetOwner() { return owner; }
+void Bullet::SetOwner(Shooter* o) { owner = *o; }
+
+Position Bullet::GetLocation() { return location; }
+void Bullet::SetLocation(Position* l) { location = *l; }
 
 double Bullet::GetAngle() { return angle; }
 void Bullet::SetAngle(double a) { angle = a; }
@@ -19,9 +22,10 @@ void Bullet::SetDirectionColumn(double dC) { directionColumn = dC; }
 // Constructors & Destructors
 Bullet::Bullet() {}
 
-Bullet::Bullet(Position* p, double angle)
+Bullet::Bullet(Shooter* o, Position* l, double angle)
 {
-	SetPosition(p);
+	SetOwner(o);
+	SetLocation(l);
 	SetAngle(angle);
 	SetDirectionRow(sin(angle));
 	SetDirectionColumn(cos(angle));
@@ -34,7 +38,7 @@ Bullet::Bullet(Position* p, double angle)
 /// <returns>True if the bullet was drawn, False otherwise</returns>
 bool Bullet::Fire(int map[MAP_DIMENSION][MAP_DIMENSION])
 {
-	int row = (int)position.GetRow(), column = (int)position.GetColumn();
+	int row = (int)location.GetRow(), column = (int)location.GetColumn();
 
 	// Validation
 	if (map[row][column] == WALL)
@@ -43,7 +47,7 @@ bool Bullet::Fire(int map[MAP_DIMENSION][MAP_DIMENSION])
 	// Moves the bullet by BULLET_STEP to direction (directionColumn, directionRow)
 	column += GetDirectionColumn() * BULLET_STEP;
 	row += GetDirectionRow() * BULLET_STEP;
-	SetPosition(new Position(row, column));
+	SetLocation(new Position(row, column));
 
 	return true;
 }
@@ -55,7 +59,7 @@ bool Bullet::Fire(int map[MAP_DIMENSION][MAP_DIMENSION])
 /// <param name="securityMap">The security map</param>
 void Bullet::SimulateFire(int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_DIMENSION][MAP_DIMENSION])
 {
-	int row = (int)position.GetRow(), column = (int)position.GetColumn();
+	int row = (int)location.GetRow(), column = (int)location.GetColumn();
 
 	while (map[row][column] != WALL)
 	{
@@ -63,7 +67,7 @@ void Bullet::SimulateFire(int map[MAP_DIMENSION][MAP_DIMENSION], double security
 		securityMap[row][column] += BULLET_SIZE;
 		column += GetDirectionColumn() * BULLET_STEP;
 		row += GetDirectionRow() * BULLET_STEP;
-		SetPosition(new Position(row, column));
+		SetLocation(new Position(row, column));
 	}
 }
 
@@ -72,7 +76,7 @@ void Bullet::SimulateFire(int map[MAP_DIMENSION][MAP_DIMENSION], double security
 /// </summary>
 void Bullet::Draw()
 {
-	int row = position.GetRow(), column = position.GetColumn();
+	int row = location.GetRow(), column = location.GetColumn();
 	double delta = 0.5;
 
 	glColor3d(0, 0, 0); // black

@@ -7,23 +7,13 @@ class Shooter : public NPC
 {
 private:
 	// Fields
-	NPC* target;
-	int arms, previousCellContent;
-	bool isSearchingCourier, isSearchingEnemy, isAttacking;
+	int previousCellContent;
+	bool isSearchingEnemy, isAttacking;
 
 public:
 	// Properties
-	NPC* GetTarget();
-	void SetTarget(NPC* t);
-
-	int GetArms();
-	void SetArms(int a);
-
 	int GetPreviousCellContent();
 	void SetPreviousCellContent(int c);
-
-	bool IsSearchingCourier();
-	void SetIsSearchingCourier(bool i);
 
 	bool IsSearchingEnemy();
 	void SetIsSearchingEnemy(bool i);
@@ -33,12 +23,11 @@ public:
 
 	// Constructors & Destructors
 	Shooter();
-	Shooter(Position p, int t, int r);
+	Shooter(Position l, int t, int r);
 	~Shooter();
 
 	// Methods
-	void TakeArms();
-	void Shoot(Position attackPosition);
-	void ThrowGranade(Position attackPosition);
-	void Attack(Position attackPosition);
+	void Shoot(Position destination);
+	void ThrowGranade(Position destination);
+	void Attack(Position destination);
 };

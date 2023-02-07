@@ -36,7 +36,7 @@ Room::~Room() {}
 /// <returns>True if the NPC is within the Room, False otherwise</returns>
 bool Room::IsNPCInside(NPC* npc)
 {
-	Position position = npc->GetPosition();
+	Position position = npc->GetLocation();
 
 	return (fabs(position.GetRow() - centerPosition.GetRow()) <= height / 2) && (fabs(position.GetColumn() - centerPosition.GetColumn()) <= width / 2);
 }

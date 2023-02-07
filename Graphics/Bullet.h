@@ -1,5 +1,7 @@
 #pragma once
+
 // Includes
+#include "Shooter.h"
 #include "Position.h"
 #include "Settings.h"
 
@@ -7,12 +9,16 @@ class Bullet
 {
 private:
 	// Fields
-	Position position;
+	Shooter owner;
+	Position location;
 	double angle, directionRow, directionColumn;
 public:
 	// Properties
-	Position GetPosition();
-	void SetPosition(Position* p);
+	Shooter GetOwner();
+	void SetOwner(Shooter* o);
+
+	Position GetLocation();
+	void SetLocation(Position* l);
 
 	double GetAngle();
 	void SetAngle(double a);
@@ -25,7 +31,7 @@ public:
 
 	// Constructors & Destructors
 	Bullet();
-	Bullet(Position* p, double angle);
+	Bullet(Shooter* o, Position* l, double angle);
 	~Bullet();
 
 	// Methods
