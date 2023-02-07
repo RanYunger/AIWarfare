@@ -3,12 +3,12 @@
 // Includes
 #include "NPC.h"
 
-class Shooter : public NPC
+class Attacker : public NPC
 {
 private:
 	// Fields
 	int previousCellContent;
-	bool isSearchingEnemy, isAttacking;
+	bool isSearchingEnemy, isSearchingShelter, isAttacking, isCallingCourier;
 
 public:
 	// Properties
@@ -18,16 +18,23 @@ public:
 	bool IsSearchingEnemy();
 	void SetIsSearchingEnemy(bool i);
 
+	bool IsSearchingShelter();
+	void SetIsSearchingShelter(bool i);
+
 	bool IsAttacking();
 	void SetIsAttacking(bool i);
 
+	bool IsCallingCourier();
+	void SetIsCallingCourier(bool i);
+
 	// Constructors & Destructors
-	Shooter();
-	Shooter(Position l, int t, int r);
-	~Shooter();
+	Attacker();
+	~Attacker();
 
 	// Methods
-	void Shoot(Position destination);
+	void ShootBullet(Position destination);
 	void ThrowGranade(Position destination);
 	void Attack(Position destination);
+
+	bool HasLineOfSight(NPC* npc, int map[MAP_DIMENSION][MAP_DIMENSION]);
 };

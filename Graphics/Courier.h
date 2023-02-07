@@ -1,8 +1,8 @@
 #pragma once
 
 // Imports
+#include "Attacker.h"
 #include "NPC.h"
-#include "Shooter.h"
 
 class Shooter;
 
@@ -10,20 +10,29 @@ class Courier : public NPC
 {
 private:
 	// Fields
-	bool isSearchingShooter, isCollectingSupplies;
+	bool isSearchingSupply, isSearchingAlly, isSharingSupply;
 
 public:
 	// Properties
-	bool IsSearchingShooter();
-	void SetIsSearchingShooter(bool i);
+	bool IsSearchingSupply();
+	void SetIsSearchingSupply(bool i);
 
-	bool IsCollectingSuuplies();
-	void SetIsCollectingSupplies(bool i);
+	bool IsSearchingAlly();
+	void SetIsSearchingAlly(bool i);
+
+	bool IsSharingSupply();
+	void SetIsSharingSupply(bool i);
 
 	// Constructors & Destructors
 	Courier();
-	Courier(Position l, int t, int r);
 	~Courier();
 
 	// Methods
+	void GiveArms(Attacker* teammate);
+	void TakeArms(Attacker* teammate);
+	void GiveMeds(Attacker* teammate);
+	void TakeMeds(Attacker* teammate);
+
+	void PickSupply(int supply);
+
 };

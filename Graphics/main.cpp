@@ -6,6 +6,7 @@
 #include <vector>
 #include <queue>
 #include "glut.h"
+#include "Attacker.h"
 #include "Bullet.h"
 #include "Courier.h"
 #include "Grenade.h"
@@ -13,7 +14,6 @@
 #include "Node.h"
 #include "NodesComparator.h"
 #include "Room.h"
-#include "Shooter.h"
 #include "Settings.h"
 
 using namespace std;
@@ -24,7 +24,7 @@ int map[MAP_DIMENSION][MAP_DIMENSION] = { 0 }, mapCopy[MAP_DIMENSION][MAP_DIMENS
 double securityMap[MAP_DIMENSION][MAP_DIMENSION] = { 0 };
 
 Room rooms[MAX_ROOMS];
-Shooter shooters[2 * MAX_SHOOTERS_IN_TEAM];
+Attacker Attackers[2 * MAX_ATTACKERS_IN_TEAM];
 Courier couriers[2 * MAX_COURIERS_IN_TEAM];
 
 vector<Position*> supplies;
@@ -35,19 +35,19 @@ vector<Node*> visitedNodes;
 // Methods
 
 /// <summary>
-/// Retrieves the shooters of a given team.
+/// Retrieves the Attackers of a given team.
 /// </summary>
-/// <param name="teamColor">The shooters' team</param>
-/// <returns>The shooters of the given team</returns>
-Shooter* GetShootersByTeam(int teamColor)
+/// <param name="teamColor">The Attackers' team</param>
+/// <returns>The Attackers of the given team</returns>
+Attacker* GetAttackersByTeam(int teamColor)
 {
-	Shooter teamShooters[MAX_SHOOTERS_IN_TEAM];
+	Attacker teamAttackers[MAX_ATTACKERS_IN_TEAM];
 
-	for (int i = 0; i < 2 * MAX_SHOOTERS_IN_TEAM; i++)
-		if (shooters[i].GetTeam() == teamColor)
-			teamShooters[i % 2] = shooters[i];
+	for (int i = 0; i < 2 * MAX_ATTACKERS_IN_TEAM; i++)
+		if (Attackers[i].GetTeam() == teamColor)
+			teamAttackers[i % 2] = Attackers[i];
 
-	return teamShooters;
+	return teamAttackers;
 }
 
 /// <summary>
@@ -76,9 +76,9 @@ Courier GetCourierByTeam(int teamColor)
 /// <returns>The NPC members of the team</returns>
 NPC* GetTeam(int teamColor)
 {
-	Shooter* teamShooters = GetShootersByTeam(teamColor);
+	Attacker* teamAttackers = GetAttackersByTeam(teamColor);
 	Courier teamCourier = GetCourierByTeam(teamColor);
-	NPC team[MAX_SHOOTERS_IN_TEAM + MAX_COURIERS_IN_TEAM] = { teamShooters[0], teamShooters[1], teamCourier };
+	NPC team[MAX_ATTACKERS_IN_TEAM + MAX_COURIERS_IN_TEAM] = { teamAttackers[0], teamAttackers[1], teamCourier };
 
 	return team;
 }
@@ -97,24 +97,24 @@ double ManhattanDistance(Position p1, Position p2)
 }
 
 /// <summary>
-/// Finds the enemy nearest to a shooter.
+/// Finds the enemy nearest to a Attacker.
 /// </summary>
-/// <param name="shooter">The shooter that searches an enemy</param>
-/// <returns>The nearest enemy to the shooter</returns>
-NPC FindNearestEnemy(Shooter* shooter)
+/// <param name="Attacker">The Attacker that searches an enemy</param>
+/// <returns>The nearest enemy to the Attacker</returns>
+NPC FindNearestEnemy(Attacker* Attacker)
 {
-	int enemyTeamColor = shooter->GetTeam() == RED_TEAM ? BLUE_TEAM : RED_TEAM;
+	int enemyTeamColor = Attacker->GetTeam() == RED_TEAM ? BLUE_TEAM : RED_TEAM;
 	int nearestOffset = -1;
 	double currentDistance, nearestDistance = (double)MAP_DIMENSION * MAP_DIMENSION;
 	NPC* enemyTeam = GetTeam(enemyTeamColor);
 
-	for (int i = 0; i < 2 * MAX_SHOOTERS_IN_TEAM + MAX_COURIERS_IN_TEAM; i++)
+	for (int i = 0; i < 2 * MAX_ATTACKERS_IN_TEAM + MAX_COURIERS_IN_TEAM; i++)
 	{
 		// Validation
 		if (enemyTeam[i].GetHealth() <= 0)
 			continue;
 
-		currentDistance = ManhattanDistance(shooter->GetLocation(), enemyTeam[i].GetLocation());
+		currentDistance = ManhattanDistance(Attacker->GetLocation(), enemyTeam[i].GetLocation());
 		if (currentDistance < nearestDistance)
 		{
 			nearestOffset = i;
@@ -126,23 +126,23 @@ NPC FindNearestEnemy(Shooter* shooter)
 }
 
 /// <summary>
-/// Finds the shooter nearest to a courier.
+/// Finds the Attacker nearest to a courier.
 /// </summary>
-/// <param name="courier">The courier that searches a teammate shooter</param>
-/// <returns>The nearest shooter of the courier's team</returns>
-Shooter FindNearestShooter(Courier* courier)
+/// <param name="courier">The courier that searches a teammate Attacker</param>
+/// <returns>The nearest Attacker of the courier's team</returns>
+Attacker FindNearestAttacker(Courier* courier)
 {
-	Shooter* teamShooters = GetShootersByTeam(courier->GetTeam());
+	Attacker* teamAttackers = GetAttackersByTeam(courier->GetTeam());
 	int nearestOffset = -1;
 	double currentDistance, nearestDistance = (double)MAP_DIMENSION * MAP_DIMENSION;
 
-	for (int i = 0; i < MAX_SHOOTERS_IN_TEAM; i++)
+	for (int i = 0; i < MAX_ATTACKERS_IN_TEAM; i++)
 	{
 		// Validation
-		if (teamShooters[i].GetHealth() <= 0)
+		if (teamAttackers[i].GetHealth() <= 0)
 			continue;
 
-		currentDistance = ManhattanDistance(courier->GetLocation(), teamShooters[i].GetLocation());
+		currentDistance = ManhattanDistance(courier->GetLocation(), teamAttackers[i].GetLocation());
 		if (currentDistance < nearestDistance)
 		{
 			nearestOffset = i;
@@ -150,7 +150,7 @@ Shooter FindNearestShooter(Courier* courier)
 		}
 	}
 
-	return teamShooters[nearestOffset];
+	return teamAttackers[nearestOffset];
 }
 
 /// <summary>
@@ -215,7 +215,7 @@ bool IsValidNPCSpawn(Position spawnPosition, int teamColor)
 	Position npcLocation;
 
 	// Checks whether any teammate is already in the designated spawn location
-	for (int i = 0; i < MAX_SHOOTERS_IN_TEAM + MAX_COURIERS_IN_TEAM; i++)
+	for (int i = 0; i < MAX_ATTACKERS_IN_TEAM + MAX_COURIERS_IN_TEAM; i++)
 		if ((team[i].GetHealth() > 0) && (team[i].GetLocation() == npcLocation))
 			return false;
 
@@ -569,17 +569,17 @@ void InitGame()
 		blueTeamSpawnRoom = rand() % MAX_ROOMS;
 	} while (redTeamSpawnRoom == blueTeamSpawnRoom);
 
-	// Initiates 4 shooters (2 on each team)
-	for (int i = 0; i < MAX_SHOOTERS_IN_TEAM * 2; i++)
+	// Initiates 4 Attackers (2 on each team)
+	for (int i = 0; i < 2 * MAX_ATTACKERS_IN_TEAM; i++)
 	{
-		spawnLocation = RandomizeNPCSpawn(i < MAX_SHOOTERS_IN_TEAM ? &rooms[redTeamSpawnRoom] : &rooms[blueTeamSpawnRoom],
-			i < MAX_SHOOTERS_IN_TEAM ? RED_TEAM : BLUE_TEAM);
+		spawnLocation = RandomizeNPCSpawn(i < MAX_ATTACKERS_IN_TEAM ? &rooms[redTeamSpawnRoom] : &rooms[blueTeamSpawnRoom],
+			i < MAX_ATTACKERS_IN_TEAM ? RED_TEAM : BLUE_TEAM);
 
-		shooters[i].SetLocation(spawnLocation);
-		shooters[i].SetTeam(i < MAX_SHOOTERS_IN_TEAM ? RED_TEAM : BLUE_TEAM);
-		shooters[i].SetRoom(i < MAX_SHOOTERS_IN_TEAM ? redTeamSpawnRoom : blueTeamSpawnRoom);
+		Attackers[i].SetLocation(spawnLocation);
+		Attackers[i].SetTeam(i < MAX_ATTACKERS_IN_TEAM ? RED_TEAM : BLUE_TEAM);
+		Attackers[i].SetRoom(i < MAX_ATTACKERS_IN_TEAM ? redTeamSpawnRoom : blueTeamSpawnRoom);
 
-		map[(int)spawnLocation.GetRow()][(int)spawnLocation.GetColumn()] = shooters[i].GetTeam();
+		map[(int)spawnLocation.GetRow()][(int)spawnLocation.GetColumn()] = Attackers[i].GetTeam();
 	}
 
 	// Initiates 2 couriers (1 on each team)
@@ -683,46 +683,23 @@ void Restart()
 }
 
 /// <summary>
-/// Grants a courier a supply.
+/// Activates a Attacker.
 /// </summary>
-/// <param name="courier">The courier that takes the supply</param>
-/// <param name="supplyRow">The supply's row offset</param>
-/// <param name="supplyColumn">The supply's column offset</param>
-void TakeSupply(Courier* courier, int supplyRow, int supplyColumn)
+/// <param name="Attacker">The Attacker to activate</param>
+/// <param name="newLocation">The Attacker's new location</param>
+void MoveAttacker(Attacker* Attacker, Position newLocation)
 {
-	// Takes the supply
-	if (map[supplyRow][supplyColumn] == ARMS)
-		courier->SetArms(courier->GetArms() + 1);
-	else if (map[supplyRow][supplyColumn] == MEDS)
-		courier->SetMeds(courier->GetMeds() + 1);
-
-	// Removes the supply from vector
-	for (int i = 0; i < supplies.size(); i++)
-		if ((supplies[i]->GetRow() == supplyRow) && (supplies[i]->GetColumn() == supplyColumn))
-		{
-			supplies.erase(supplies.begin() + i);
-			break;
-		}
-}
-
-/// <summary>
-/// Activates a shooter.
-/// </summary>
-/// <param name="shooter">The shooter to activate</param>
-/// <param name="newLocation">The shooter's new location</param>
-void MoveShooter(Shooter* shooter, Position newLocation)
-{
-	Position oldLocation = shooter->GetLocation();
+	Position oldLocation = Attacker->GetLocation();
 	int oldRow = (int)oldLocation.GetRow(), oldColumn = (int)oldLocation.GetColumn();
 	int newRow = (int)newLocation.GetRow(), newColumn = (int)newLocation.GetColumn();
 
 	// Moves color-wise
-	map[oldRow][oldColumn] = shooter->GetPreviousCellContent(); // The cell shooter leaves returns to its original color
-	shooter->SetPreviousCellContent(map[newRow][newColumn]);	// shooter remembers the color of the new cell
-	map[newRow][newColumn] = shooter->GetTeam();
+	map[oldRow][oldColumn] = Attacker->GetPreviousCellContent(); // The cell Attacker leaves returns to its original color
+	Attacker->SetPreviousCellContent(map[newRow][newColumn]);	// Attacker remembers the color of the new cell
+	map[newRow][newColumn] = Attacker->GetTeam();
 
 	// Moves location-wise
-	shooter->SetLocation(newLocation);
+	Attacker->SetLocation(newLocation);
 }
 
 /// <summary>
@@ -738,7 +715,17 @@ void MoveCourier(Courier* courier, Position newLocation)
 
 	// Collects supply (if there's one)
 	if ((map[newRow][newColumn] == ARMS) || (map[newRow][newColumn] == MEDS))
-		TakeSupply(courier, newRow, newColumn);
+	{
+		courier->PickSupply(map[newRow][newColumn]);
+
+		// Removes the supply from vector
+		for (int i = 0; i < supplies.size(); i++)
+			if ((supplies[i]->GetRow() == newRow) && (supplies[i]->GetColumn() == newColumn))
+			{
+				supplies.erase(supplies.begin() + i);
+				break;
+			}
+	}
 
 	// Moves color-wise
 	map[oldRow][oldColumn] = SPACE;
@@ -777,13 +764,13 @@ Position FindNextLocation(NPC* npc)
 }
 
 /// <summary>
-/// Activates a shooter by its state.
+/// Activates a Attacker by its state.
 /// </summary>
-/// <param name="shooter">The shooter to activate</param>
-void IterateShooter(Shooter* shooter)
+/// <param name="Attacker">The Attacker to activate</param>
+void IterateAttacker(Attacker* Attacker)
 {
 	// Validation
-	if (shooter->GetHealth() <= 0)
+	if (Attacker->GetHealth() <= 0)
 		return;
 
 	// TODO: COMPLETE
@@ -808,12 +795,12 @@ void IterateCourier(Courier* courier)
 /// <param name="teamColor">The team's color</param>
 void IterateTeam(int teamColor)
 {
-	Shooter* teamShooters = GetShootersByTeam(teamColor);
+	Attacker* teamAttackers = GetAttackersByTeam(teamColor);
 	Courier teamCourier = GetCourierByTeam(teamColor);
 
 	// Iterates team members
-	for (int i = 0; i < MAX_SHOOTERS_IN_TEAM; i++)
-		IterateShooter(&teamShooters[i]);
+	for (int i = 0; i < MAX_ATTACKERS_IN_TEAM; i++)
+		IterateAttacker(&teamAttackers[i]);
 
 	IterateCourier(&teamCourier);
 }

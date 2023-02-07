@@ -12,7 +12,7 @@ class NPC
 protected:
 	// Fields
 	Position location, destination;
-	State* state;
+	State* activeState, *interruptedState;
 	int health, team, room, arms, meds;
 
 public:
@@ -23,8 +23,11 @@ public:
 	Position GetDestination();
 	void SetDestination(Position d);
 
-	State* GetState();
-	void SetState(State* s);
+	State* GetActiveState();
+	void SetActiveState(State* s);
+
+	State* GetInterruptedState();
+	void SetInterruptedState(State* s);
 
 	int GetHealth();
 	void SetHealth(int h);
@@ -43,17 +46,8 @@ public:
 
 	// Constructors & Destructors
 	NPC();
-	NPC(Position l, int t, int r);
 	~NPC();
 
 	// Methods
 	void TakeDamage(int damage);
-	
-	void GiveArms(NPC* teammate);
-	void TakeArms(NPC* teammate);
-
-	void GiveMeds(NPC* teammate);
-	void TakeMeds(NPC* teammate);
-
-	bool HasLineOfSight(int map[MAP_DIMENSION][MAP_DIMENSION], NPC* other);
 };

@@ -1,7 +1,7 @@
 #pragma once
 
 // Includes
-#include "Shooter.h"
+#include "Attacker.h"
 #include "Position.h"
 #include "Bullet.h"
 #include "Settings.h"
@@ -10,20 +10,20 @@ class Grenade
 {
 private:
 	// Fields
-	Shooter owner;
+	Attacker owner;
 	Position location;
 	Bullet* shards[SHARDS_IN_GRENADE];
 public:
 	// Properties
-	Shooter GetOwner();
-	void SetOwner(Shooter* o);
+	Attacker GetOwner();
+	void SetOwner(Attacker* o);
 
 	Position GetLocation();
 	void SetLocation(Position* l);
 
 	// Consturctors & Destructors
 	Grenade();
-	Grenade(Shooter* o, Position* l);
+	Grenade(Attacker* o, Position* l);
 	~Grenade();
 
 	// Methods

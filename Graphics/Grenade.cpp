@@ -2,15 +2,15 @@
 #include "Grenade.h"
 
 // Properties
-Shooter Grenade::GetOwner() { return owner; }
-void Grenade::SetOwner(Shooter* o) { owner = *o; }
+Attacker Grenade::GetOwner() { return owner; }
+void Grenade::SetOwner(Attacker* o) { owner = *o; }
 
 Position Grenade::GetLocation() { return location; }
 void Grenade::SetLocation(Position* l) { location = *l; }
 
 // Constructors
 Grenade::Grenade() {}
-Grenade::Grenade(Shooter* o, Position* l)
+Grenade::Grenade(Attacker* o, Position* l)
 {
 	double alpha, teta = (360.0 / SHARDS_IN_GRENADE) * PI / 180;
 

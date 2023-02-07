@@ -4,8 +4,8 @@
 #include "glut.h"
 
 // Properties
-Shooter Bullet::GetOwner() { return owner; }
-void Bullet::SetOwner(Shooter* o) { owner = *o; }
+Attacker Bullet::GetOwner() { return owner; }
+void Bullet::SetOwner(Attacker* o) { owner = *o; }
 
 Position Bullet::GetLocation() { return location; }
 void Bullet::SetLocation(Position* l) { location = *l; }
@@ -22,7 +22,7 @@ void Bullet::SetDirectionColumn(double dC) { directionColumn = dC; }
 // Constructors & Destructors
 Bullet::Bullet() {}
 
-Bullet::Bullet(Shooter* o, Position* l, double angle)
+Bullet::Bullet(Attacker* o, Position* l, double angle)
 {
 	SetOwner(o);
 	SetLocation(l);
