@@ -1,7 +1,6 @@
 #pragma once
 
 // Includes
-#include "Attacker.h"
 #include "Position.h"
 #include "Settings.h"
 
@@ -9,16 +8,17 @@ class Bullet
 {
 private:
 	// Fields
-	Attacker owner;
 	Position location;
+	int team;
 	double angle, directionRow, directionColumn;
+
 public:
 	// Properties
-	Attacker GetOwner();
-	void SetOwner(Attacker* o);
-
 	Position GetLocation();
-	void SetLocation(Position* l);
+	void SetLocation(Position l);
+
+	int GetTeam();
+	void SetTeam(int t);
 
 	double GetAngle();
 	void SetAngle(double a);
@@ -31,12 +31,12 @@ public:
 
 	// Constructors & Destructors
 	Bullet();
-	Bullet(Attacker* o, Position* l, double angle);
+	Bullet(Position l, int t, double a);
 	~Bullet();
 
 	// Methods
-	bool Fire(int map[MAP_DIMENSION][MAP_DIMENSION]);
-	void SimulateFire(int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_DIMENSION][MAP_DIMENSION]);
+	bool Move(int map[MAP_DIMENSION][MAP_DIMENSION]);
+	void Fire(int map[MAP_DIMENSION][MAP_DIMENSION], int securityMap[MAP_DIMENSION][MAP_DIMENSION]);
 	void Draw();
 };
 

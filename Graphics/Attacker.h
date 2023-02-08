@@ -1,17 +1,27 @@
 #pragma once
 
 // Includes
+#include "Bullet.h"
+#include "Grenade.h"
 #include "NPC.h"
 
 class Attacker : public NPC
 {
 private:
 	// Fields
+	Bullet* bullet;
+	Grenade* grenade;
 	int previousCellContent;
 	bool isSearchingEnemy, isSearchingShelter, isAttacking, isCallingCourier;
 
 public:
 	// Properties
+	Bullet* GetBullet();
+	void SetBullet(Bullet* b);
+
+	Grenade* GetGrenade();
+	void SetGrenade(Grenade* g);
+
 	int GetPreviousCellContent();
 	void SetPreviousCellContent(int c);
 
@@ -32,9 +42,9 @@ public:
 	~Attacker();
 
 	// Methods
-	void ShootBullet(Position destination);
-	void ThrowGranade(Position destination);
-	void Attack(Position destination);
+	void ShootBullet(Position destination, int map[MAP_DIMENSION][MAP_DIMENSION], int securityMap[MAP_DIMENSION][MAP_DIMENSION]);
+	void ThrowGranade(Position destination, int map[MAP_DIMENSION][MAP_DIMENSION], int securityMap[MAP_DIMENSION][MAP_DIMENSION]);
+	void Attack(Position destination, int map[MAP_DIMENSION][MAP_DIMENSION], int securityMap[MAP_DIMENSION][MAP_DIMENSION]);
 
 	bool HasLineOfSight(NPC* npc, int map[MAP_DIMENSION][MAP_DIMENSION]);
 };

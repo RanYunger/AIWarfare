@@ -4,29 +4,28 @@
 // Properties
 
 // Constructors & Destructors
-ShareSupplyState::ShareSupplyState()
-	: State() {}
+ShareSupplyState::ShareSupplyState() {}
 ShareSupplyState::~ShareSupplyState() {}
 
 // Methods
 
 /// <summary>
-/// Transforms the courier to the next state.
+/// Transforms the NPC to the next state.
 /// </summary>
-/// <param name="courier">The courier</param>
-void ShareSupplyState::Transform(Courier* courier)
+/// <param name="npc">The NPC</param>
+void ShareSupplyState::Transform(NPC* npc)
 {
 	// TODO: COMPLETE
 }
 
 /// <summary>
-/// Enters the courier's state.
+/// Enters the NPC's state.
 /// </summary>
-/// <param name="courier">The courier</param>
-void ShareSupplyState::OnEnter(Courier* courier) { courier->SetIsSharingSupply(true); }
+/// <param name="npc">The NPC</param>
+void ShareSupplyState::OnEnter(NPC* npc) { ((Courier*)npc)->SetIsSharingSupply(true); }
 
 /// <summary>
-/// Exits the courier's state.
+/// Exits the NPC's state.
 /// </summary>
-/// <param name="courier">The courier</param>
-void ShareSupplyState::OnExit(Courier* courier) { courier->SetIsSharingSupply(false); }
+/// <param name="attacker">The attacker</param>
+void ShareSupplyState::OnExit(NPC* npc) { ((Courier*)npc)->SetIsSharingSupply(false); }

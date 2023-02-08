@@ -4,29 +4,28 @@
 // Properties
 
 // Constructors & Destructors
-SearchSupplyState::SearchSupplyState()
-	: State() {}
+SearchSupplyState::SearchSupplyState() {}
 SearchSupplyState::~SearchSupplyState() {}
 
 // Methods
 
 /// <summary>
-/// Transforms the courier to the next state.
+/// Transforms the NPC to the next state.
 /// </summary>
-/// <param name="courier">The courier</param>
-void SearchSupplyState::Transform(Courier* courier)
+/// <param name="npc">The NPC</param>
+void SearchSupplyState::Transform(NPC* npc)
 {
 	// TODO: COMPLETE
 }
 
 /// <summary>
-/// Enters the courier's state.
+/// Enters the NPC's state.
 /// </summary>
-/// <param name="courier">The courier</param>
-void SearchSupplyState::OnEnter(Courier* courier) { courier->SetIsSearchingSupply(true); }
+/// <param name="npc">The NPC</param>
+void SearchSupplyState::OnEnter(NPC* npc) { ((Courier*)npc)->SetIsSearchingSupply(true); }
 
 /// <summary>
-/// Exits the courier's state.
+/// Exits the NPC's state.
 /// </summary>
-/// <param name="courier">The courier</param>
-void SearchSupplyState::OnExit(Courier* courier) { courier->SetIsSearchingSupply(false); }
+/// <param name="attacker">The attacker</param>
+void SearchSupplyState::OnExit(NPC* npc) { ((Courier*)npc)->SetIsSearchingSupply(false); }

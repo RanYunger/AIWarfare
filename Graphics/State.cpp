@@ -4,7 +4,5 @@
 // Properties
 
 // Constructors & Destructors
-State::State() {}
-State::~State() {}
 
 // Methods

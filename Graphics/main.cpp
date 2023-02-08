@@ -5,6 +5,7 @@
 #include <Windows.h>
 #include <vector>
 #include <queue>
+#include <string>
 #include "glut.h"
 #include "Attacker.h"
 #include "Bullet.h"
@@ -19,69 +20,20 @@
 using namespace std;
 
 // Fields
-bool gameOver = false, restart = false, foundRoad = false;
+bool gameOver = false, restart = false;
 int map[MAP_DIMENSION][MAP_DIMENSION] = { 0 }, mapCopy[MAP_DIMENSION][MAP_DIMENSION] = { 0 };
 double securityMap[MAP_DIMENSION][MAP_DIMENSION] = { 0 };
 
 Room rooms[MAX_ROOMS];
-Attacker Attackers[2 * MAX_ATTACKERS_IN_TEAM];
+Attacker attackers[2 * MAX_ATTACKERS_IN_TEAM];
 Courier couriers[2 * MAX_COURIERS_IN_TEAM];
 
 vector<Position*> supplies;
 vector<Bullet*> bullets;
 vector<Grenade*> grenades;
-vector<Node*> visitedNodes;
+vector<Node*> nodes;
 
 // Methods
-
-/// <summary>
-/// Retrieves the Attackers of a given team.
-/// </summary>
-/// <param name="teamColor">The Attackers' team</param>
-/// <returns>The Attackers of the given team</returns>
-Attacker* GetAttackersByTeam(int teamColor)
-{
-	Attacker teamAttackers[MAX_ATTACKERS_IN_TEAM];
-
-	for (int i = 0; i < 2 * MAX_ATTACKERS_IN_TEAM; i++)
-		if (Attackers[i].GetTeam() == teamColor)
-			teamAttackers[i % 2] = Attackers[i];
-
-	return teamAttackers;
-}
-
-/// <summary>
-/// Retrieves the courier of a given team.
-/// </summary>
-/// <param name="teamColor">The courier's team</param>
-/// <returns>The courier of the given team</returns>
-Courier GetCourierByTeam(int teamColor)
-{
-	Courier teamCourier;
-
-	for (int i = 0; i < 2 * MAX_COURIERS_IN_TEAM; i++)
-		if (couriers[i].GetTeam() == teamColor)
-		{
-			teamCourier = couriers[i];
-			break;
-		}
-
-	return teamCourier;
-}
-
-/// <summary>
-/// Retrieves a team by its color.
-/// </summary>
-/// <param name="teamColor">The team's color</param>
-/// <returns>The NPC members of the team</returns>
-NPC* GetTeam(int teamColor)
-{
-	Attacker* teamAttackers = GetAttackersByTeam(teamColor);
-	Courier teamCourier = GetCourierByTeam(teamColor);
-	NPC team[MAX_ATTACKERS_IN_TEAM + MAX_COURIERS_IN_TEAM] = { teamAttackers[0], teamAttackers[1], teamCourier };
-
-	return team;
-}
 
 /// <summary>
 /// Calculates Manhattan distance between 2 locations.
@@ -99,30 +51,45 @@ double ManhattanDistance(Position p1, Position p2)
 /// <summary>
 /// Finds the enemy nearest to a Attacker.
 /// </summary>
-/// <param name="Attacker">The Attacker that searches an enemy</param>
-/// <returns>The nearest enemy to the Attacker</returns>
-NPC FindNearestEnemy(Attacker* Attacker)
+/// <param name="attacker">The attacker that searches an enemy</param>
+/// <returns>The nearest enemy to the attacker</returns>
+NPC FindNearestEnemy(Attacker attacker)
 {
-	int enemyTeamColor = Attacker->GetTeam() == RED_TEAM ? BLUE_TEAM : RED_TEAM;
-	int nearestOffset = -1;
-	double currentDistance, nearestDistance = (double)MAP_DIMENSION * MAP_DIMENSION;
-	NPC* enemyTeam = GetTeam(enemyTeamColor);
+	int enemyTeamColor = attacker.GetTeam() == RED_TEAM ? BLUE_TEAM : RED_TEAM;
+	int nearestAttackerOffset = -1, nearestCourierOffset = -1;
+	double currentDistance, nearestAttackerDistance = (double)MAP_DIMENSION * MAP_DIMENSION,
+		nearestCourierDistance = (double)MAP_DIMENSION * MAP_DIMENSION;
 
-	for (int i = 0; i < 2 * MAX_ATTACKERS_IN_TEAM + MAX_COURIERS_IN_TEAM; i++)
+	// Finds the enemy (attacker / courier) nearest to the attacker
+	for (int i = 0; i < 2 * MAX_ATTACKERS_IN_TEAM; i++)
 	{
 		// Validation
-		if (enemyTeam[i].GetHealth() <= 0)
+		if ((attackers[i].GetTeam() == attacker.GetTeam()) || (attackers[i].GetHealth() <= 0))
 			continue;
 
-		currentDistance = ManhattanDistance(Attacker->GetLocation(), enemyTeam[i].GetLocation());
-		if (currentDistance < nearestDistance)
+		currentDistance = ManhattanDistance(attackers[i].GetLocation(), attacker.GetLocation());
+		if (currentDistance < nearestAttackerDistance)
 		{
-			nearestOffset = i;
-			nearestDistance = currentDistance;
+			nearestAttackerOffset = i;
+			nearestAttackerDistance = currentDistance;
 		}
 	}
 
-	return enemyTeam[nearestOffset];
+	for (int i = 0; i < 2 * MAX_COURIERS_IN_TEAM; i++)
+	{
+		// Validation
+		if ((couriers[i].GetTeam() == attacker.GetTeam()) || (couriers[i].GetHealth() <= 0))
+			continue;
+
+		currentDistance = ManhattanDistance(couriers[i].GetLocation(), attacker.GetLocation());
+		if (currentDistance < nearestCourierDistance)
+		{
+			nearestCourierOffset = i;
+			nearestCourierDistance = currentDistance;
+		}
+	}
+
+	return nearestAttackerDistance < nearestCourierDistance ? (NPC)attackers[nearestAttackerOffset] : (NPC)couriers[nearestCourierOffset];
 }
 
 /// <summary>
@@ -130,19 +97,18 @@ NPC FindNearestEnemy(Attacker* Attacker)
 /// </summary>
 /// <param name="courier">The courier that searches a teammate Attacker</param>
 /// <returns>The nearest Attacker of the courier's team</returns>
-Attacker FindNearestAttacker(Courier* courier)
+Attacker FindNearestAttacker(Courier courier)
 {
-	Attacker* teamAttackers = GetAttackersByTeam(courier->GetTeam());
 	int nearestOffset = -1;
 	double currentDistance, nearestDistance = (double)MAP_DIMENSION * MAP_DIMENSION;
 
-	for (int i = 0; i < MAX_ATTACKERS_IN_TEAM; i++)
+	for (int i = 0; i < 2 * MAX_ATTACKERS_IN_TEAM; i++)
 	{
 		// Validation
-		if (teamAttackers[i].GetHealth() <= 0)
+		if ((attackers[i].GetTeam() != courier.GetTeam()) || (attackers[i].GetHealth() <= 0))
 			continue;
 
-		currentDistance = ManhattanDistance(courier->GetLocation(), teamAttackers[i].GetLocation());
+		currentDistance = ManhattanDistance(courier.GetLocation(), attackers[i].GetLocation());
 		if (currentDistance < nearestDistance)
 		{
 			nearestOffset = i;
@@ -150,7 +116,7 @@ Attacker FindNearestAttacker(Courier* courier)
 		}
 	}
 
-	return teamAttackers[nearestOffset];
+	return attackers[nearestOffset];
 }
 
 /// <summary>
@@ -187,16 +153,16 @@ Node* FindMinimalFNode()
 	float minimalF = MAP_DIMENSION * MAP_DIMENSION;
 
 	// Retrieves Node with minimal f value
-	for (int i = 0; i < visitedNodes.size(); i++)
-		if (visitedNodes[i]->GetF() < minimalF)
+	for (int i = 0; i < nodes.size(); i++)
+		if (nodes[i]->GetF() < minimalF)
 		{
-			minimalF = visitedNodes[i]->GetF();
+			minimalF = nodes[i]->GetF();
 			eraseOffset = i;
 		}
 
 	// Removes retrieved Node from vector
-	minimalNodePtr = visitedNodes[eraseOffset];
-	visitedNodes.erase(visitedNodes.begin() + eraseOffset);
+	minimalNodePtr = nodes[eraseOffset];
+	nodes.erase(nodes.begin() + eraseOffset);
 
 	return minimalNodePtr;
 }
@@ -211,13 +177,26 @@ Node* FindMinimalFNode()
 /// <returns>True if the NPC can spawn in the given location, False otherwise</returns>
 bool IsValidNPCSpawn(Position spawnPosition, int teamColor)
 {
-	NPC* team = GetTeam(teamColor);
-	Position npcLocation;
-
 	// Checks whether any teammate is already in the designated spawn location
-	for (int i = 0; i < MAX_ATTACKERS_IN_TEAM + MAX_COURIERS_IN_TEAM; i++)
-		if ((team[i].GetHealth() > 0) && (team[i].GetLocation() == npcLocation))
+	for (int i = 0; i < 2 * MAX_ATTACKERS_IN_TEAM; i++)
+	{
+		// Validation
+		if ((attackers[i].GetTeam() != teamColor) || (attackers[i].GetHealth() <= 0))
+			continue;
+
+		if (attackers[i].GetLocation() == spawnPosition)
 			return false;
+	}
+
+	for (int i = 0; i < 2 * MAX_COURIERS_IN_TEAM; i++)
+	{
+		// Validation
+		if ((couriers[i].GetTeam() != teamColor) || (couriers[i].GetHealth() <= 0))
+			continue;
+
+		if (couriers[i].GetLocation() == spawnPosition)
+			return false;
+	}
 
 	return true;
 }
@@ -231,8 +210,8 @@ bool IsValidNPCSpawn(Position spawnPosition, int teamColor)
 Position RandomizeNPCSpawn(Room* room, int teamColor)
 {
 	Position centerPosition = room->GetCenterPosition(), spawnLocation;
-	int roomRowStart = fabs(centerPosition.GetRow() - room->GetHeight() / 2);
-	int roomColumnStart = fabs(centerPosition.GetColumn() - room->GetWidth() / 2);
+	int roomRowStart = (int)fabs(centerPosition.GetRow() - room->GetHeight() / 2);
+	int roomColumnStart = (int)fabs(centerPosition.GetColumn() - room->GetWidth() / 2);
 
 	do
 	{
@@ -407,10 +386,10 @@ bool IsRoomOverlapping(int centerRow, int centerColumn, int height, int width)
 /// <param name="room">The room to place obstacles in</param>
 void PlaceObstacles(Room* room)
 {
-	int roomRowStart = fabs(room->GetCenterPosition().GetRow() - room->GetHeight() / 2);
-	int roomRowEnd = room->GetCenterPosition().GetRow() + room->GetHeight() / 2;
-	int roomColumnStart = fabs(room->GetCenterPosition().GetColumn() - room->GetWidth() / 2);
-	int roomColumnEnd = room->GetCenterPosition().GetColumn() + room->GetWidth() / 2;
+	int roomRowStart = (int)fabs(room->GetCenterPosition().GetRow() - room->GetHeight() / 2);
+	int roomRowEnd = (int)room->GetCenterPosition().GetRow() + room->GetHeight() / 2;
+	int roomColumnStart = (int)fabs(room->GetCenterPosition().GetColumn() - room->GetWidth() / 2);
+	int roomColumnEnd = (int)room->GetCenterPosition().GetColumn() + room->GetWidth() / 2;
 	int obstaclesCount = 2 + rand() % (MAX_OBSTACLES_IN_ROOM - 2), orientation = rand() % 2;
 	int height, width, row, column;
 
@@ -459,10 +438,10 @@ bool CanPlaceSupply(int row, int column)
 /// <param name="room">The room to place supplies in</param>
 void PlaceSupplies(Room* room)
 {
-	int roomRowStart = fabs(room->GetCenterPosition().GetRow() - room->GetHeight() / 2);
-	int roomRowEnd = room->GetCenterPosition().GetRow() + room->GetHeight() / 2;
-	int roomColumnStart = fabs(room->GetCenterPosition().GetColumn() - room->GetWidth() / 2);
-	int roomColumnEnd = room->GetCenterPosition().GetColumn() + room->GetWidth() / 2;
+	int roomRowStart = (int)fabs(room->GetCenterPosition().GetRow() - room->GetHeight() / 2);
+	int roomRowEnd = (int)room->GetCenterPosition().GetRow() + room->GetHeight() / 2;
+	int roomColumnStart = (int)fabs(room->GetCenterPosition().GetColumn() - room->GetWidth() / 2);
+	int roomColumnEnd = (int)room->GetCenterPosition().GetColumn() + room->GetWidth() / 2;
 	int ammosCount = rand() % MAX_ARMS, medsCount = rand() % MAX_MEDS_IN_ROOM;
 	int row, column;
 
@@ -499,10 +478,10 @@ void PlaceSupplies(Room* room)
 /// <param name="room">The room to place on the map</param>
 void PlaceRoom(Room* room)
 {
-	int roomRowStart = fabs(room->GetCenterPosition().GetRow() - room->GetHeight() / 2);
-	int roomRowEnd = room->GetCenterPosition().GetRow() + room->GetHeight() / 2;
-	int roomColumnStart = fabs(room->GetCenterPosition().GetColumn() - room->GetWidth() / 2);
-	int roomColumnEnd = room->GetCenterPosition().GetColumn() + room->GetWidth() / 2;
+	int roomRowStart = (int)fabs(room->GetCenterPosition().GetRow() - room->GetHeight() / 2);
+	int roomRowEnd = (int)room->GetCenterPosition().GetRow() + room->GetHeight() / 2;
+	int roomColumnStart = (int)fabs(room->GetCenterPosition().GetColumn() - room->GetWidth() / 2);
+	int roomColumnEnd = (int)room->GetCenterPosition().GetColumn() + room->GetWidth() / 2;
 
 	for (int row = roomRowStart; row <= roomRowEnd; row++)
 		for (int column = roomColumnStart; column <= roomColumnEnd; column++)
@@ -575,11 +554,11 @@ void InitGame()
 		spawnLocation = RandomizeNPCSpawn(i < MAX_ATTACKERS_IN_TEAM ? &rooms[redTeamSpawnRoom] : &rooms[blueTeamSpawnRoom],
 			i < MAX_ATTACKERS_IN_TEAM ? RED_TEAM : BLUE_TEAM);
 
-		Attackers[i].SetLocation(spawnLocation);
-		Attackers[i].SetTeam(i < MAX_ATTACKERS_IN_TEAM ? RED_TEAM : BLUE_TEAM);
-		Attackers[i].SetRoom(i < MAX_ATTACKERS_IN_TEAM ? redTeamSpawnRoom : blueTeamSpawnRoom);
+		attackers[i].SetLocation(spawnLocation);
+		attackers[i].SetTeam(i < MAX_ATTACKERS_IN_TEAM ? RED_TEAM : BLUE_TEAM);
+		attackers[i].SetRoom(i < MAX_ATTACKERS_IN_TEAM ? redTeamSpawnRoom : blueTeamSpawnRoom);
 
-		map[(int)spawnLocation.GetRow()][(int)spawnLocation.GetColumn()] = Attackers[i].GetTeam();
+		map[(int)spawnLocation.GetRow()][(int)spawnLocation.GetColumn()] = attackers[i].GetTeam();
 	}
 
 	// Initiates 2 couriers (1 on each team)
@@ -674,7 +653,10 @@ void Restart()
 {
 	gameOver = false;
 
-	visitedNodes.clear();
+	supplies.clear();
+	bullets.clear();
+	grenades.clear();
+	nodes.clear();
 
 	InitMap();
 	InitGame();
@@ -719,7 +701,7 @@ void MoveCourier(Courier* courier, Position newLocation)
 		courier->PickSupply(map[newRow][newColumn]);
 
 		// Removes the supply from vector
-		for (int i = 0; i < supplies.size(); i++)
+		for (int i = 0; i < (int)supplies.size(); i++)
 			if ((supplies[i]->GetRow() == newRow) && (supplies[i]->GetColumn() == newColumn))
 			{
 				supplies.erase(supplies.begin() + i);
@@ -764,16 +746,39 @@ Position FindNextLocation(NPC* npc)
 }
 
 /// <summary>
-/// Activates a Attacker by its state.
+/// Activates an attacker by its state.
 /// </summary>
-/// <param name="Attacker">The Attacker to activate</param>
-void IterateAttacker(Attacker* Attacker)
+/// <param name="attacker">The attacker to activate</param>
+void IterateAttacker(Attacker* attacker)
 {
-	// Validation
-	if (Attacker->GetHealth() <= 0)
-		return;
+	Bullet* bullet = attacker->GetBullet();
+	Grenade* grenade = attacker->GetGrenade();
 
-	// TODO: COMPLETE
+	// Manages the attacker's bullet (if there's one)
+	if ((bullet != nullptr) && (!bullet->Move(map)))
+	{
+		for (int i = 0; i < bullets.size(); i++)
+			if (bullets[i] == bullet)
+			{
+				bullets.erase(bullets.begin() + i);
+				break;
+			}
+
+		attacker->SetBullet(nullptr);
+	}
+
+	// Manages the attacker's grenade (if there's one)
+	if ((grenade != nullptr) && (!grenade->Move(map)))
+	{
+		for (int i = 0; i < grenades.size(); i++)
+			if (grenades[i] == grenade)
+			{
+				grenades.erase(grenades.begin() + i);
+				break;
+			}
+
+		attacker->SetGrenade(nullptr);
+	}
 }
 
 /// <summary>
@@ -782,10 +787,6 @@ void IterateAttacker(Attacker* Attacker)
 /// <param name="courier">The courier to activate</param>
 void IterateCourier(Courier* courier)
 {
-	// Validation
-	if (courier->GetHealth() <= 0)
-		return;
-
 	// TODO: COMPLETE
 }
 
@@ -795,14 +796,41 @@ void IterateCourier(Courier* courier)
 /// <param name="teamColor">The team's color</param>
 void IterateTeam(int teamColor)
 {
-	Attacker* teamAttackers = GetAttackersByTeam(teamColor);
-	Courier teamCourier = GetCourierByTeam(teamColor);
+	string winningTeam;
+	int deadTeammates = 0;
 
 	// Iterates team members
-	for (int i = 0; i < MAX_ATTACKERS_IN_TEAM; i++)
-		IterateAttacker(&teamAttackers[i]);
+	for (int i = 0; i < 2 * MAX_ATTACKERS_IN_TEAM; i++)
+	{
+		// Validation
+		if (attackers[i].GetTeam() != teamColor)
+			continue;
 
-	IterateCourier(&teamCourier);
+		if (attackers[i].GetHealth() <= 0)
+			deadTeammates++;
+		else
+			IterateAttacker(&attackers[i]);
+	}
+
+	for (int i = 0; i < 2 * MAX_COURIERS_IN_TEAM; i++)
+	{
+		// Validation
+		if (couriers[i].GetTeam() != teamColor)
+			continue;
+
+		if (couriers[i].GetHealth() <= 0)
+			deadTeammates++;
+		else
+			IterateCourier(&couriers[i]);
+	}
+
+	// Checks whether the entire team is dead (and the game is over)
+	gameOver = deadTeammates == MAX_ATTACKERS_IN_TEAM + MAX_COURIERS_IN_TEAM;
+	if (gameOver)
+	{
+		winningTeam = teamColor == RED_TEAM ? "Blue" : "Red";
+		cout << "Game Over. " << winningTeam << " team wins.\n";
+	}
 }
 
 /// <summary>
@@ -811,12 +839,26 @@ void IterateTeam(int teamColor)
 void IterateGame()
 {
 	if (!gameOver)
-	{
 		IterateTeam(RED_TEAM);
+	if (!gameOver)
 		IterateTeam(BLUE_TEAM);
-	}
 
 	Sleep(100);
+}
+
+/// <summary>
+/// Creates a security map.
+/// </summary>
+void CreateSecurityMap()
+{
+	int row, column;
+
+	// TODO: COMPLETE
+	for (int i = 0; i < 2500; i++)
+	{
+		row = MAP_DIMENSION * ((rand() % WINDOW_HEIGHT) / (double)WINDOW_HEIGHT);
+		column = MAP_DIMENSION * ((rand() % WINDOW_WIDTH) / (double)WINDOW_WIDTH);
+	}
 }
 
 // Default Methods
@@ -827,9 +869,7 @@ void CreateMenu(int choice)
 	{
 	case -1: exit(0); break;
 	case 0: restart = true; break;
-	case 1:
-		//createSecuriteMap();
-		break;
+	case 1: CreateSecurityMap(); break;
 	}
 }
 void init()
@@ -846,8 +886,10 @@ void display()
 
 	DrawMap();
 
-	glBegin(GL_POLYGON);
-	glEnd();
+	for (int i = 0; i < bullets.size(); i++)
+		bullets[i]->Draw();
+	for (int i = 0; i < grenades.size(); i++)
+		grenades[i]->Draw();
 
 	glutSwapBuffers(); // show all
 }
@@ -855,11 +897,8 @@ void idle()
 {
 	if (restart)
 		Restart();
-
 	else if (gameOver)
-	{
 		return;
-	}
 	else
 		IterateGame();
 

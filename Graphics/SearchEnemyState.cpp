@@ -4,29 +4,28 @@
 // Properties
 
 // Consturctors & Destructors
-SearchEnemyState::SearchEnemyState()
-	: State() {}
+SearchEnemyState::SearchEnemyState() {}
 SearchEnemyState::~SearchEnemyState() {}
 
 // Methods
 
 /// <summary>
-/// Transforms the attacker to the next state.
+/// Transforms the NPC to the next state.
 /// </summary>
-/// <param name="attacker">The attacker</param>
-void SearchEnemyState::Transform(Attacker* attacker)
+/// <param name="npc">The NPC</param>
+void SearchEnemyState::Transform(NPC* npc)
 {
 	// TODO: COMPLETE
 }
 
 /// <summary>
-/// Enters the attacker's state.
+/// Enters the NPC's state.
 /// </summary>
-/// <param name="attacker">The attacker</param>
-void SearchEnemyState::OnEnter(Attacker* attacker) { attacker->SetIsSearchingEnemy(true); }
+/// <param name="npc">The NPC</param>
+void SearchEnemyState::OnEnter(NPC* npc) { ((Attacker*)npc)->SetIsSearchingEnemy(true); }
 
 /// <summary>
-/// Exits the attacker's state.
+/// Exits the NPC's state.
 /// </summary>
 /// <param name="attacker">The attacker</param>
-void SearchEnemyState::OnExit(Attacker* attacker) { attacker->SetIsSearchingEnemy(false); }
+void SearchEnemyState::OnExit(NPC* npc) { ((Attacker*)npc)->SetIsSearchingEnemy(false); }

@@ -17,7 +17,7 @@ public:
 	~SearchEnemyState();
 
 	// Methods
-	void Transform(Attacker* attacker);
-	void OnEnter(Attacker* attacker);
-	void OnExit(Attacker* attacker);
+	void Transform(NPC* npc);
+	void OnEnter(NPC* npc);
+	void OnExit(NPC* npc);
 };

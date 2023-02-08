@@ -41,9 +41,11 @@ NPC::NPC()
 	SetDestination(*defaultPosition);
 	SetActiveState(nullptr);
 	SetInterruptedState(nullptr);
-	SetHealth(-1);
+	SetHealth(MAX_HEALTH);
 	SetTeam(-1);
 	SetRoom(-1);
+	SetArms(MAX_ARMS);
+	SetMeds(MAX_MEDS);
 }
 NPC::~NPC() {}
 

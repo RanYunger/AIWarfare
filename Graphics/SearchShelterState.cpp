@@ -4,29 +4,28 @@
 // Properties
 
 // Constructors & Destructors
-SearchShelterState::SearchShelterState()
-	: State() {}
+SearchShelterState::SearchShelterState() {}
 SearchShelterState::~SearchShelterState() {}
 
 // Methods
 
 /// <summary>
-/// Transforms the attacker to the next state.
+/// Transforms the NPC to the next state.
 /// </summary>
-/// <param name="attacker">The attacker</param>
-void SearchShelterState::Transform(Attacker* attacker)
+/// <param name="npc">The NPC</param>
+void SearchShelterState::Transform(NPC* npc)
 {
 	// TODO: COMPLETE
 }
 
 /// <summary>
-/// Enters the attacker's state.
+/// Enters the NPC's state.
 /// </summary>
-/// <param name="attacker">The attacker</param>
-void SearchShelterState::OnEnter(Attacker* attacker) { attacker->SetIsSearchingShelter(true); }
+/// <param name="npc">The NPC</param>
+void SearchShelterState::OnEnter(NPC* npc) { ((Attacker*)npc)->SetIsSearchingShelter(true); }
 
 /// <summary>
-/// Exits the attacker's state.
+/// Exits the NPC's state.
 /// </summary>
 /// <param name="attacker">The attacker</param>
-void SearchShelterState::OnExit(Attacker* attacker) { attacker->SetIsSearchingShelter(false); }
+void SearchShelterState::OnExit(NPC* npc) { ((Attacker*)npc)->SetIsSearchingShelter(false); }

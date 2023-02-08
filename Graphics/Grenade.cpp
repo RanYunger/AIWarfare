@@ -2,22 +2,23 @@
 #include "Grenade.h"
 
 // Properties
-Attacker Grenade::GetOwner() { return owner; }
-void Grenade::SetOwner(Attacker* o) { owner = *o; }
-
 Position Grenade::GetLocation() { return location; }
-void Grenade::SetLocation(Position* l) { location = *l; }
+void Grenade::SetLocation(Position l) { location = l; }
+
+int Grenade::GetTeam() { return team; }
+void Grenade::SetTeam(int t) { team = t; }
 
 // Constructors
 Grenade::Grenade() {}
-Grenade::Grenade(Attacker* o, Position* l)
+Grenade::Grenade(Position l, int t)
 {
 	double alpha, teta = (360.0 / SHARDS_IN_GRENADE) * PI / 180;
 
-	SetOwner(o);
 	SetLocation(l);
+	SetTeam(t);
+
 	for (int i = 0, alpha = 0; i < SHARDS_IN_GRENADE; i++, alpha += teta)
-		shards[i] = new Bullet(o, l, alpha);
+		shards[i] = new Bullet(l, t, alpha);
 }
 Grenade::~Grenade() {}
 
@@ -28,12 +29,12 @@ Grenade::~Grenade() {}
 /// </summary>
 /// <param name="map">The map to draw the grenade upon</param>
 /// <returns>True if the grenade or its shards are drawn, False otherwise</returns>
-bool Grenade::Explode(int map[MAP_DIMENSION][MAP_DIMENSION])
+bool Grenade::Move(int map[MAP_DIMENSION][MAP_DIMENSION])
 {
 	bool finished = true;
 
 	for (int i = 0; i < SHARDS_IN_GRENADE; i++)
-		if (shards[i]->Fire(map))
+		if (shards[i]->Move(map))
 			finished = false;
 
 	return !finished;
@@ -43,11 +44,11 @@ bool Grenade::Explode(int map[MAP_DIMENSION][MAP_DIMENSION])
 /// Simulates a grenade behaviour.
 /// </summary>
 /// <param name="map">The map to simulate the grenade at</param>
-/// <param name="securityMap">The security map</param>
-void Grenade::SimulateExplosion(int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_DIMENSION][MAP_DIMENSION])
+/// <param name="securityMap">The security map to simulate the bullet at</param>
+void Grenade::Explode(int map[MAP_DIMENSION][MAP_DIMENSION], int securityMap[MAP_DIMENSION][MAP_DIMENSION])
 {
 	for (int i = 0; i < SHARDS_IN_GRENADE; i++)
-		shards[i]->SimulateFire(map, securityMap);
+		shards[i]->Fire(map, securityMap);
 }
 
 /// <summary>

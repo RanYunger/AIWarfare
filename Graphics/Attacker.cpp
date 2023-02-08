@@ -3,12 +3,16 @@
 
 #include <math.h>
 #include <stdlib.h>
-#include "Bullet.h"
-#include "Grenade.h"
 #include "SearchEnemyState.h"
 #include "Settings.h"
 
 // Properties
+Bullet* Attacker::GetBullet() { return bullet; }
+void Attacker::SetBullet(Bullet* b) { bullet = b; }
+
+Grenade* Attacker::GetGrenade() { return grenade; }
+void Attacker::SetGrenade(Grenade* g) { grenade = g; }
+
 int Attacker::GetPreviousCellContent() { return previousCellContent; }
 void Attacker::SetPreviousCellContent(int c) { previousCellContent = c; }
 
@@ -28,6 +32,8 @@ void Attacker::SetIsCallingCourier(bool i) { isCallingCourier = i; }
 Attacker::Attacker()
 	: NPC()
 {
+	SetBullet(nullptr);
+	SetGrenade(nullptr);
 	SetPreviousCellContent(SPACE);
 	SetIsSearchingEnemy(false);
 	SetIsSearchingShelter(false);
@@ -35,6 +41,7 @@ Attacker::Attacker()
 	SetIsCallingCourier(false);
 
 	SetActiveState((State*)new SearchEnemyState());
+	activeState->OnEnter(this);
 }
 Attacker::~Attacker() {}
 
@@ -44,33 +51,46 @@ Attacker::~Attacker() {}
 /// Shoots a bullet towards a given destination.
 /// </summary>
 /// <param name="destination">The position the bullet is heading to</param>
-void Attacker::ShootBullet(Position destination)
+/// <param name="map">The map to simulate the grenade at</param>
+/// <param name="securityMap">The security map to simulate the bullet at</param>
+void Attacker::ShootBullet(Position destination, int map[MAP_DIMENSION][MAP_DIMENSION], int securityMap[MAP_DIMENSION][MAP_DIMENSION])
 {
-	// TODO: COMPLETE
+	double dRow = destination.GetRow() - location.GetRow(), dColumn = destination.GetColumn() - location.GetColumn();
+
+	arms = arms - 1 <= 0 ? 0 : arms - 1;
+
+	bullet = new Bullet(location, team, atan(dRow / dColumn));
+	bullet->Fire(map, securityMap);
 }
 
 /// <summary>
 /// Throws a grenade towards a given destination.
 /// </summary>
 /// <param name="destination">The position the grenade is heading to</param>
-void Attacker::ThrowGranade(Position destination)
+/// <param name="map">The map to simulate the grenade at</param>
+/// <param name="securityMap">The security map to simulate the bullet at</param>
+void Attacker::ThrowGranade(Position destination, int map[MAP_DIMENSION][MAP_DIMENSION], int securityMap[MAP_DIMENSION][MAP_DIMENSION])
 {
-	// TODO: COMPLETE
-	//Bullet* bullet = new Bullet(this, &location, (rand() % 360) * PI / 180.0);
+	arms = arms - 1 <= 0 ? 0 : arms - 1;
+
+	grenade = new Grenade(location, team);
+	grenade->Explode(map, securityMap);
 }
 
 /// <summary>
 /// Activates a random attack.
 /// </summary>
 /// <param name="destination">The position the attack is heading to</param>
-void Attacker::Attack(Position destination)
+/// <param name="map">The map to simulate the grenade at</param>
+/// <param name="securityMap">The security map to simulate the bullet at</param>
+void Attacker::Attack(Position destination, int map[MAP_DIMENSION][MAP_DIMENSION], int securityMap[MAP_DIMENSION][MAP_DIMENSION])
 {
-	arms = arms - 1 <= 0 ? 0 : arms - 1;
+	bool isShootingBullet = rand() % 2 == 0;
 
-	if (rand() % 2)
-		ShootBullet(destination);
-	else
-		ThrowGranade(destination);
+	if ((isShootingBullet) && (bullet == nullptr))
+		ShootBullet(destination, map, securityMap);
+	else if ((!isShootingBullet) && (grenade == nullptr))
+		ThrowGranade(destination, map, securityMap);
 }
 
 /// <summary>
@@ -81,9 +101,9 @@ void Attacker::Attack(Position destination)
 /// <returns>True if there's a line of sight, False otherwise</returns>
 bool Attacker::HasLineOfSight(NPC* npc, int map[MAP_DIMENSION][MAP_DIMENSION])
 {
-	int myRow = (int)location.GetRow(), myColumn = (int)location.GetColumn();
-	int otherRow = (int)npc->GetLocation().GetRow(), otherColumn = (int)npc->GetLocation().GetColumn();
-	int rowDiff = otherRow - myRow, columnDiff = otherColumn - myColumn;
+	double myRow = location.GetRow(), myColumn = location.GetColumn(),
+		otherRow = npc->GetLocation().GetRow(), otherColumn = npc->GetLocation().GetColumn();
+	double rowDiff = otherRow - myRow, columnDiff = otherColumn - myColumn;
 	double length = sqrt(rowDiff * rowDiff + columnDiff * columnDiff);
 	double dRow = rowDiff / length, dColumn = columnDiff / length;
 

@@ -23,6 +23,7 @@ Courier::Courier()
 	SetIsSharingSupply(false);
 
 	SetActiveState((State*)new SearchSupplyState());
+	activeState->OnEnter(this);
 }
 Courier::~Courier() {}
 

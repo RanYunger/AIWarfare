@@ -17,7 +17,7 @@ public:
 	~SearchAllyState();
 
 	// Methods
-	void Transform(Courier* courier);
-	void OnEnter(Courier* courier);
-	void OnExit(Courier* courier);
+	void Transform(NPC* npc);
+	void OnEnter(NPC* npc);
+	void OnExit(NPC* npc);
 };

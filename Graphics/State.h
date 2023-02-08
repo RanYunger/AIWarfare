@@ -1,6 +1,9 @@
 #pragma once
 
 // Includes
+#include "NPC.h"
+
+class NPC;
 
 class State
 {
@@ -11,8 +14,9 @@ public:
 	// Properties
 
 	// Constructors & Destructors
-	State();
-	~State();
 
 	// Methods
+	virtual void Transform(NPC* npc) = 0;	// To the next state
+	virtual void OnEnter(NPC* npc) = 0;		// To the current state
+	virtual void OnExit(NPC* npc) = 0;		// From the current state
 };

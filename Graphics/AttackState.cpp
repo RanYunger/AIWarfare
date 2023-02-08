@@ -2,29 +2,28 @@
 #include "AttackState.h"
 
 // Constructors & Destructors
-AttackState::AttackState()
-	: State() {}
+AttackState::AttackState() {}
 AttackState::~AttackState() {}
 
 // Methods
 
 /// <summary>
-/// Transforms the attacker to the next state.
+/// Transforms the NPC to the next state.
 /// </summary>
-/// <param name="attacker">The attacker</param>
-void AttackState::Transform(Attacker* attacker)
+/// <param name="npc">The NPC</param>
+void AttackState::Transform(NPC* npc)
 {
 	// TODO: COMPLETE
 }
 
 /// <summary>
-/// Enters the attacker's state.
+/// Enters the NPC's state.
 /// </summary>
-/// <param name="attacker">The attacker</param>
-void AttackState::OnEnter(Attacker* attacker) { attacker->SetIsAttacking(true); }
+/// <param name="npc">The NPC</param>
+void AttackState::OnEnter(NPC* npc) { ((Attacker*)npc)->SetIsAttacking(true); }
 
 /// <summary>
-/// Exits the attacker's state.
+/// Exits the NPC's state.
 /// </summary>
 /// <param name="attacker">The attacker</param>
-void AttackState::OnExit(Attacker* attacker) { attacker->SetIsAttacking(false); }
+void AttackState::OnExit(NPC* npc) { ((Attacker*)npc)->SetIsAttacking(false); }
