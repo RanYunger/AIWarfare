@@ -14,6 +14,9 @@ void Courier::SetIsSearchingAlly(bool i) { isSearchingAlly = i; }
 bool Courier::IsSharingSupply() { return isSharingSupply; }
 void Courier::SetIsSharingSupply(bool i) { isSharingSupply = i; }
 
+bool Courier::IsCalled() { return isCalled; }
+void Courier::SetIsCalled(bool i) { isCalled = i; }
+
 // Constructors & Destructors
 Courier::Courier()
 	: NPC()
@@ -21,6 +24,7 @@ Courier::Courier()
 	SetIsSharingSupply(false);
 	SetIsSearchingAlly(false);
 	SetIsSharingSupply(false);
+	SetIsCalled(false);
 
 	SetActiveState((State*)new SearchSupplyState());
 	activeState->OnEnter(this);

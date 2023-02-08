@@ -10,7 +10,7 @@ class Courier : public NPC
 {
 private:
 	// Fields
-	bool isSearchingSupply, isSearchingAlly, isSharingSupply;
+	bool isSearchingSupply, isSearchingAlly, isSharingSupply, isCalled;
 
 public:
 	// Properties
@@ -22,6 +22,9 @@ public:
 
 	bool IsSharingSupply();
 	void SetIsSharingSupply(bool i);
+
+	bool IsCalled();
+	void SetIsCalled(bool i);
 
 	// Constructors & Destructors
 	Courier();

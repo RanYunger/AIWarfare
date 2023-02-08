@@ -1,5 +1,6 @@
 // Includes
 #include "Bullet.h"
+
 #include <math.h>
 #include "glut.h"
 
@@ -32,10 +33,10 @@ Bullet::Bullet(Position l, int t, double a)
 }
 
 /// <summary>
-/// Indicates whether the bullet is drawn by its position.
+/// Indicates whether the bullet can move.
 /// </summary>
 /// <param name="map">The map to draw the bullet upon</param>
-/// <returns>True if the bullet was drawn, False otherwise</returns>
+/// <returns>True if the bullet can move, False otherwise</returns>
 bool Bullet::Move(int map[MAP_DIMENSION][MAP_DIMENSION])
 {
 	double row = location.GetRow(), column = location.GetColumn();
@@ -59,7 +60,7 @@ bool Bullet::Move(int map[MAP_DIMENSION][MAP_DIMENSION])
 /// </summary>
 /// <param name="map">The map to simulate the bullet at</param>
 /// <param name="securityMap">The security map to simulate the bullet at</param>
-void Bullet::Fire(int map[MAP_DIMENSION][MAP_DIMENSION], int securityMap[MAP_DIMENSION][MAP_DIMENSION])
+void Bullet::Fire(int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_DIMENSION][MAP_DIMENSION])
 {
 	int row = (int)location.GetRow(), column = (int)location.GetColumn();
 
@@ -78,7 +79,7 @@ void Bullet::Draw()
 	int row = (int)location.GetRow(), column = (int)location.GetColumn();
 	double delta = 0.5;
 
-	glColor3d(0, 0, 0); // black
+	glColor3d(0.75, 0.75, 0.75); // Silver
 	glBegin(GL_POLYGON);
 	glVertex2d(column - delta, row);
 	glVertex2d(column, row + delta);

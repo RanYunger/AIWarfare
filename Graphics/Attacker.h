@@ -42,9 +42,9 @@ public:
 	~Attacker();
 
 	// Methods
-	void ShootBullet(Position destination, int map[MAP_DIMENSION][MAP_DIMENSION], int securityMap[MAP_DIMENSION][MAP_DIMENSION]);
-	void ThrowGranade(Position destination, int map[MAP_DIMENSION][MAP_DIMENSION], int securityMap[MAP_DIMENSION][MAP_DIMENSION]);
-	void Attack(Position destination, int map[MAP_DIMENSION][MAP_DIMENSION], int securityMap[MAP_DIMENSION][MAP_DIMENSION]);
+	void ShootBullet(int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_DIMENSION][MAP_DIMENSION], double angle);
+	void ThrowGranade(int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_DIMENSION][MAP_DIMENSION], double angle);
+	void Attack(Position destination, int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_DIMENSION][MAP_DIMENSION]);
 
 	bool HasLineOfSight(NPC* npc, int map[MAP_DIMENSION][MAP_DIMENSION]);
 };

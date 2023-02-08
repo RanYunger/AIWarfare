@@ -9,7 +9,11 @@ double Position::GetColumn() { return column; }
 void Position::SetColumn(double c) { column = c; }
 
 // Constructors & Destructors
-Position::Position() {}
+Position::Position()
+{
+	SetRow(-1);
+	SetColumn(-1);
+}
 Position::Position(double r, double c)
 {
 	SetRow(r);

@@ -1,7 +1,11 @@
 #pragma once
 
+// Includes
+#include "Position.h"
+
 // Constants
 const double PI = 3.1415;
+const Position EMPTY_POSITION;
 
 // Window related
 const int WINDOW_HEIGHT = 50, WINDOW_WIDTH = 400;

@@ -1,6 +1,8 @@
 // Includes
 #include "AttackState.h"
 
+#include "SearchShelterState.h"
+
 // Constructors & Destructors
 AttackState::AttackState() {}
 AttackState::~AttackState() {}
@@ -13,7 +15,9 @@ AttackState::~AttackState() {}
 /// <param name="npc">The NPC</param>
 void AttackState::Transform(NPC* npc)
 {
-	// TODO: COMPLETE
+	OnExit(npc);
+	npc->SetActiveState((State*)new SearchShelterState());
+	npc->GetActiveState()->OnEnter(npc);
 }
 
 /// <summary>

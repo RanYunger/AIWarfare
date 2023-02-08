@@ -1,6 +1,9 @@
 // Includes
 #include "ShareSupplyState.h"
 
+#include "SearchAllyState.h"
+#include "SearchSupplyState.h"
+
 // Properties
 
 // Constructors & Destructors
@@ -15,7 +18,11 @@ ShareSupplyState::~ShareSupplyState() {}
 /// <param name="npc">The NPC</param>
 void ShareSupplyState::Transform(NPC* npc)
 {
-	// TODO: COMPLETE
+	State* nextState = ((Courier*)npc)->IsCalled() ? (State*)new SearchAllyState() : (State*)new SearchSupplyState();
+
+	OnExit(npc);
+	npc->SetActiveState(nextState);
+	npc->GetActiveState()->OnEnter(npc);
 }
 
 /// <summary>

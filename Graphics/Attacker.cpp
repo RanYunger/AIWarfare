@@ -50,30 +50,28 @@ Attacker::~Attacker() {}
 /// <summary>
 /// Shoots a bullet towards a given destination.
 /// </summary>
-/// <param name="destination">The position the bullet is heading to</param>
 /// <param name="map">The map to simulate the grenade at</param>
 /// <param name="securityMap">The security map to simulate the bullet at</param>
-void Attacker::ShootBullet(Position destination, int map[MAP_DIMENSION][MAP_DIMENSION], int securityMap[MAP_DIMENSION][MAP_DIMENSION])
+/// <param name="angle">The angle the bullet is shot at</param>
+void Attacker::ShootBullet(int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_DIMENSION][MAP_DIMENSION], double angle)
 {
-	double dRow = destination.GetRow() - location.GetRow(), dColumn = destination.GetColumn() - location.GetColumn();
-
 	arms = arms - 1 <= 0 ? 0 : arms - 1;
-
-	bullet = new Bullet(location, team, atan(dRow / dColumn));
+	
+	bullet = new Bullet(location, team, angle);
 	bullet->Fire(map, securityMap);
 }
 
 /// <summary>
 /// Throws a grenade towards a given destination.
 /// </summary>
-/// <param name="destination">The position the grenade is heading to</param>
 /// <param name="map">The map to simulate the grenade at</param>
 /// <param name="securityMap">The security map to simulate the bullet at</param>
-void Attacker::ThrowGranade(Position destination, int map[MAP_DIMENSION][MAP_DIMENSION], int securityMap[MAP_DIMENSION][MAP_DIMENSION])
+/// <param name="angle">The angle the granade is thrown at</param>
+void Attacker::ThrowGranade(int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_DIMENSION][MAP_DIMENSION], double angle)
 {
 	arms = arms - 1 <= 0 ? 0 : arms - 1;
 
-	grenade = new Grenade(location, team);
+	grenade = new Grenade(location, team, angle);
 	grenade->Explode(map, securityMap);
 }
 
@@ -83,14 +81,16 @@ void Attacker::ThrowGranade(Position destination, int map[MAP_DIMENSION][MAP_DIM
 /// <param name="destination">The position the attack is heading to</param>
 /// <param name="map">The map to simulate the grenade at</param>
 /// <param name="securityMap">The security map to simulate the bullet at</param>
-void Attacker::Attack(Position destination, int map[MAP_DIMENSION][MAP_DIMENSION], int securityMap[MAP_DIMENSION][MAP_DIMENSION])
+void Attacker::Attack(Position destination, int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_DIMENSION][MAP_DIMENSION])
 {
+	double dRow = destination.GetRow() - location.GetRow(), dColumn = destination.GetColumn() - location.GetColumn();
+	double angle = atan(dRow / dColumn);
 	bool isShootingBullet = rand() % 2 == 0;
 
 	if ((isShootingBullet) && (bullet == nullptr))
-		ShootBullet(destination, map, securityMap);
+		ShootBullet(map, securityMap, angle);
 	else if ((!isShootingBullet) && (grenade == nullptr))
-		ThrowGranade(destination, map, securityMap);
+		ThrowGranade(map, securityMap, angle);
 }
 
 /// <summary>

@@ -20,7 +20,7 @@
 using namespace std;
 
 // Fields
-bool gameOver = false, restart = false;
+bool gameOver = false, restart = false, securityMapVisible = false;
 int map[MAP_DIMENSION][MAP_DIMENSION] = { 0 }, mapCopy[MAP_DIMENSION][MAP_DIMENSION] = { 0 };
 double securityMap[MAP_DIMENSION][MAP_DIMENSION] = { 0 };
 
@@ -611,28 +611,35 @@ void InitMap()
 /// </summary>
 void DrawMap()
 {
+	double securityFactor;
+
 	for (int row = 0; row < MAP_DIMENSION; row++)
 		for (int column = 0; column < MAP_DIMENSION; column++)
 		{
+			securityFactor = 1 - securityMap[row][column];
+
 			switch (map[row][column])
 			{
 			case WALL:
-				glColor3d(0, 0, 0);			// Black
+				glColor3d(0, 0, 0);				// Black
 				break;
 			case SPACE:
-				glColor3d(0.3, 0.3, 0.3);	// Gray
+				if (securityMapVisible)
+					glColor3d(securityFactor, securityFactor, securityFactor);
+				else
+					glColor3d(0.3, 0.3, 0.3);	// Gray
 				break;
 			case RED_TEAM:
-				glColor3d(1, 0, 0);			// Red
+				glColor3d(1, 0, 0);				// Red
 				break;
 			case BLUE_TEAM:
-				glColor3d(0, 0, 1);			// Blue
+				glColor3d(0, 0, 1);				// Blue
 				break;
 			case ARMS:
-				glColor3d(1, 0.64, 0);		// Orange
+				glColor3d(0.54, 0.5, 0);		// Dark Yellow
 				break;
 			case MEDS:
-				glColor3d(0, 1, 0);			// Green
+				glColor3d(0.56, 0.93, 0.56);	// Light Green
 				break;
 			}
 
@@ -768,7 +775,7 @@ void IterateAttacker(Attacker* attacker)
 	}
 
 	// Manages the attacker's grenade (if there's one)
-	if ((grenade != nullptr) && (!grenade->Move(map)))
+	if ((grenade != nullptr) && (!grenade->Move(map, securityMap)))
 	{
 		for (int i = 0; i < grenades.size(); i++)
 			if (grenades[i] == grenade)
@@ -847,18 +854,25 @@ void IterateGame()
 }
 
 /// <summary>
-/// Creates a security map.
+/// Toggles the security map.
 /// </summary>
-void CreateSecurityMap()
+void ToggleSecurityMap()
 {
 	int row, column;
 
-	// TODO: COMPLETE
-	for (int i = 0; i < 2500; i++)
-	{
-		row = MAP_DIMENSION * ((rand() % WINDOW_HEIGHT) / (double)WINDOW_HEIGHT);
-		column = MAP_DIMENSION * ((rand() % WINDOW_WIDTH) / (double)WINDOW_WIDTH);
-	}
+	if ((securityMapVisible = !securityMapVisible))
+		for (int i = 0; i < 2500; i++)
+		{
+			row = MAP_DIMENSION * ((rand() % WINDOW_HEIGHT) / (double)WINDOW_HEIGHT);
+			column = MAP_DIMENSION * ((rand() % WINDOW_WIDTH) / (double)WINDOW_WIDTH);
+
+			if (map[row][column] == SPACE)
+			{
+				// TODO: COMPLETE
+				//pg = new Grenade(xx, yy);
+				//pg->SimulateExplosion(maze, security_map);
+			}
+		}
 }
 
 // Default Methods
@@ -869,7 +883,7 @@ void CreateMenu(int choice)
 	{
 	case -1: exit(0); break;
 	case 0: restart = true; break;
-	case 1: CreateSecurityMap(); break;
+	case 1: ToggleSecurityMap(); break;
 	}
 }
 void init()
@@ -915,10 +929,10 @@ int main(int argc, char* argv[])
 	glutDisplayFunc(display); // display is the refresh function
 	glutIdleFunc(idle);
 
-	// Create menu to ask user which algorithm they'd like to activate
+	// Creates menu to ask user for operation
 	glutCreateMenu(CreateMenu);
 
-	glutAddMenuEntry("Show Security Map", 1);
+	glutAddMenuEntry("Toggle Security Map", 1);
 	glutAddMenuEntry("Restart", 0);
 	glutAddMenuEntry("Exit", -1);
 

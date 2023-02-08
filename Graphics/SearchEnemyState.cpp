@@ -1,6 +1,8 @@
 // Includes
 #include "SearchEnemyState.h"
 
+#include "AttackState.h"
+
 // Properties
 
 // Consturctors & Destructors
@@ -15,7 +17,9 @@ SearchEnemyState::~SearchEnemyState() {}
 /// <param name="npc">The NPC</param>
 void SearchEnemyState::Transform(NPC* npc)
 {
-	// TODO: COMPLETE
+	OnExit(npc);
+	npc->SetActiveState((State*)new AttackState());
+	npc->GetActiveState()->OnEnter(npc);
 }
 
 /// <summary>

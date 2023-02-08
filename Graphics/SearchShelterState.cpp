@@ -1,6 +1,8 @@
 // Includes
 #include "SearchShelterState.h"
 
+#include "SearchEnemyState.h"
+
 // Properties
 
 // Constructors & Destructors
@@ -15,7 +17,9 @@ SearchShelterState::~SearchShelterState() {}
 /// <param name="npc">The NPC</param>
 void SearchShelterState::Transform(NPC* npc)
 {
-	// TODO: COMPLETE
+	OnExit(npc);
+	npc->SetActiveState((State*)new SearchEnemyState());
+	npc->GetActiveState()->OnEnter(npc);
 }
 
 /// <summary>
