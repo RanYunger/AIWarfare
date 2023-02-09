@@ -13,8 +13,8 @@ void Attacker::SetBullet(Bullet* b) { bullet = b; }
 Grenade* Attacker::GetGrenade() { return grenade; }
 void Attacker::SetGrenade(Grenade* g) { grenade = g; }
 
-int Attacker::GetPreviousCellContent() { return previousCellContent; }
-void Attacker::SetPreviousCellContent(int c) { previousCellContent = c; }
+int Attacker::GetSteppedOnSupply() { return steppedOnSupply; }
+void Attacker::SetSteppedOnSupply(int s) { steppedOnSupply = s; }
 
 bool Attacker::IsSearchingEnemy() { return isSearchingEnemy; }
 void Attacker::SetIsSearchingEnemy(bool i) { isSearchingEnemy = i; }
@@ -31,13 +31,13 @@ Attacker::Attacker()
 {
 	SetBullet(nullptr);
 	SetGrenade(nullptr);
-	SetPreviousCellContent(SPACE);
+	SetSteppedOnSupply(SPACE);
 	SetIsSearchingEnemy(false);
 	SetIsSearchingShelter(false);
 	SetIsAttacking(false);
 
 	SetActiveState((State*)new SearchEnemyState());
-	activeState->OnEnter(this);
+	GetActiveState()->OnEnter(this);
 }
 Attacker::~Attacker() {}
 
@@ -65,9 +65,8 @@ void Attacker::CallCourier(Courier* courier, int supply, int transaction)
 void Attacker::ShootBullet(double angle, int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_DIMENSION][MAP_DIMENSION])
 {
 	arms = arms - 1 <= 0 ? 0 : arms - 1;
-	
+
 	bullet = new Bullet(location, team, angle);
-	bullet->Fire(map, securityMap);
 }
 
 /// <summary>
@@ -81,7 +80,6 @@ void Attacker::ThrowGranade(Position destination, int map[MAP_DIMENSION][MAP_DIM
 	arms = arms - 1 <= 0 ? 0 : arms - 1;
 
 	grenade = new Grenade(location, destination, team);
-	grenade->Explode(map, securityMap);
 }
 
 /// <summary>
@@ -121,4 +119,27 @@ bool Attacker::HasLineOfSight(NPC npc, int map[MAP_DIMENSION][MAP_DIMENSION])
 			return false;
 
 	return true;
+}
+
+/// <summary>
+/// Indicates whether any of the attacker's allies requires a supply.
+/// </summary>
+/// <param name="attackers">The attackers of both teams</param>
+/// <param name="supply">The supply to check if any of the allies needs</param>
+/// <returns>True if the supply is required, False otherwise</returns>
+bool Attacker::IsAllyRequiresSupply(Attacker* attackers, int supply)
+{
+	for (int i = 0; i < MAX_ATTACKERS_IN_TEAM; i++)
+	{
+		// Validation
+		if ((attackers[i].GetHealth() == 0) || (attackers[i].GetTeam() != team))
+			continue;
+
+		if ((supply == ARMS) && (attackers[i].GetArms() == 0))
+			return true;
+		if ((supply == MEDS) && (attackers[i].GetMeds() == 0))
+			return true;
+	}
+
+	return false;
 }

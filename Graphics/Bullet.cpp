@@ -36,8 +36,9 @@ Bullet::Bullet(Position l, int t, double a)
 /// Indicates whether the bullet can move.
 /// </summary>
 /// <param name="map">The map to draw the bullet upon</param>
+/// <param name="securityMap">The security map to simulate the grenade at</param>
 /// <returns>True if the bullet can move, False otherwise</returns>
-bool Bullet::Move(int map[MAP_DIMENSION][MAP_DIMENSION])
+bool Bullet::Move(int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_DIMENSION][MAP_DIMENSION])
 {
 	double row = location.GetRow(), column = location.GetColumn();
 	Position* newLocation;
@@ -46,29 +47,16 @@ bool Bullet::Move(int map[MAP_DIMENSION][MAP_DIMENSION])
 	if (map[(int)row][(int)column] == WALL)
 		return false;
 
-	// Moves the bullet by BULLET_STEP to direction (directionColumn, directionRow)
+	// Moves the bullet by BULLET_STEP to direction (directionColumn, directionRow) on the map
 	column += GetDirectionColumn() * BULLET_STEP;
 	row += GetDirectionRow() * BULLET_STEP;
 	newLocation = new Position(row, column);
 	SetLocation(*newLocation);
 
+	// Updates the security factor at (row, column)
+	securityMap[(int)row][(int)column] += BULLET_SIZE;
+
 	return true;
-}
-
-/// <summary>
-/// Simulates a bullet behaviour.
-/// </summary>
-/// <param name="map">The map to simulate the bullet at</param>
-/// <param name="securityMap">The security map to simulate the bullet at</param>
-void Bullet::Fire(int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_DIMENSION][MAP_DIMENSION])
-{
-	int row = (int)location.GetRow(), column = (int)location.GetColumn();
-
-	while (map[row][column] != WALL)
-	{
-		securityMap[row][column] += BULLET_SIZE;
-		Move(map);
-	}
 }
 
 /// <summary>

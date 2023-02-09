@@ -49,74 +49,19 @@ double ManhattanDistance(Position p1, Position p2)
 }
 
 /// <summary>
-/// Finds the enemy nearest to a Attacker.
+/// Finds the attackers by their team.
 /// </summary>
-/// <param name="attacker">The attacker that searches an enemy</param>
-/// <returns>The nearest enemy to the attacker</returns>
-NPC* FindNearestEnemy(Attacker attacker)
+/// <param name="teamColor">The attackers' team</param>
+/// <returns>The team's attackers</returns>
+Attacker** FindTeamAttackers(int teamColor)
 {
-	int enemyTeamColor = attacker.GetTeam() == RED_TEAM ? BLUE_TEAM : RED_TEAM;
-	int nearestAttackerOffset = -1, nearestCourierOffset = -1;
-	double currentDistance, nearestAttackerDistance = (double)MAP_DIMENSION * MAP_DIMENSION,
-		nearestCourierDistance = (double)MAP_DIMENSION * MAP_DIMENSION;
-
-	// Finds the enemy (attacker / courier) nearest to the attacker
-	for (int i = 0; i < 2 * MAX_ATTACKERS_IN_TEAM; i++)
-	{
-		// Validation
-		if ((attackers[i].GetTeam() == attacker.GetTeam()) || (attackers[i].GetHealth() <= 0))
-			continue;
-
-		currentDistance = ManhattanDistance(attackers[i].GetLocation(), attacker.GetLocation());
-		if (currentDistance < nearestAttackerDistance)
-		{
-			nearestAttackerOffset = i;
-			nearestAttackerDistance = currentDistance;
-		}
-	}
-
-	for (int i = 0; i < 2 * MAX_COURIERS_IN_TEAM; i++)
-	{
-		// Validation
-		if ((couriers[i].GetTeam() == attacker.GetTeam()) || (couriers[i].GetHealth() <= 0))
-			continue;
-
-		currentDistance = ManhattanDistance(couriers[i].GetLocation(), attacker.GetLocation());
-		if (currentDistance < nearestCourierDistance)
-		{
-			nearestCourierOffset = i;
-			nearestCourierDistance = currentDistance;
-		}
-	}
-
-	return nearestAttackerDistance < nearestCourierDistance ? (NPC*)&attackers[nearestAttackerOffset] : (NPC*)&couriers[nearestCourierOffset];
-}
-
-/// <summary>
-/// Finds the teammate attacker nearest to a courier.
-/// </summary>
-/// <param name="courier">The courier that searches a teammate attacker</param>
-/// <returns>The nearest Attacker of the courier's team</returns>
-Attacker* FindNearestAlly(Courier courier)
-{
-	int nearestOffset = -1;
-	double currentDistance, nearestDistance = (double)MAP_DIMENSION * MAP_DIMENSION;
+	Attacker* teamAttackers[MAX_ATTACKERS_IN_TEAM];
 
 	for (int i = 0; i < 2 * MAX_ATTACKERS_IN_TEAM; i++)
-	{
-		// Validation
-		if ((attackers[i].GetHealth() <= 0) || (attackers[i].GetTeam() != courier.GetTeam()))
-			continue;
+		if ((attackers[i].GetHealth() > 0) && (attackers[i].GetTeam() == teamColor))
+			teamAttackers[i / MAX_ATTACKERS_IN_TEAM] = &attackers[i];
 
-		currentDistance = ManhattanDistance(courier.GetLocation(), attackers[i].GetLocation());
-		if (currentDistance < nearestDistance)
-		{
-			nearestOffset = i;
-			nearestDistance = currentDistance;
-		}
-	}
-
-	return &attackers[nearestOffset];
+	return teamAttackers;
 }
 
 /// <summary>
@@ -131,6 +76,133 @@ Courier* FindTeamCourier(int teamColor)
 			return &couriers[i];
 
 	return nullptr;
+}
+
+/// <summary>
+/// Finds a team by its color
+/// </summary>
+/// <param name="teamColor">The team's color</param>
+/// <returns>The team</returns>
+NPC** FindTeam(int teamColor)
+{
+	Attacker** teamAttackers = FindTeamAttackers(teamColor);
+	Courier* teamCourier = FindTeamCourier(teamColor);
+	NPC* team[MAX_ATTACKERS_IN_TEAM + MAX_COURIERS_IN_TEAM] = { teamAttackers[0], teamAttackers[1], teamCourier };
+
+	return team;
+}
+
+/// <summary>
+/// Finds the enemy nearest to a Attacker.
+/// </summary>
+/// <param name="attacker">The attacker that searches an enemy</param>
+/// <returns>The nearest enemy to the attacker</returns>
+NPC* FindNearestEnemy(Attacker attacker)
+{
+	int enemyTeamColor = attacker.GetTeam() == RED_TEAM ? BLUE_TEAM : RED_TEAM, nearestOffset = -1;
+	double currentDistance, nearestDistance = (double)MAP_DIMENSION * MAP_DIMENSION;
+	NPC** enemyTeam = FindTeam(enemyTeamColor);
+
+	// Finds the enemy (attacker / courier) nearest to the attacker
+	for (int i = 0; i < MAX_ATTACKERS_IN_TEAM + MAX_COURIERS_IN_TEAM; i++)
+	{
+		// Validation
+		if (enemyTeam[i]->GetHealth() <= 0)
+			continue;
+
+		currentDistance = ManhattanDistance(attackers[i].GetLocation(), attacker.GetLocation());
+		if (currentDistance < nearestDistance)
+		{
+			nearestOffset = i;
+			nearestDistance = currentDistance;
+		}
+	}
+
+	return enemyTeam[nearestOffset];
+}
+
+/// <summary>
+/// Finds the teammate attacker nearest to a courier.
+/// </summary>
+/// <param name="courier">The courier that searches a teammate attacker</param>
+/// <returns>The nearest Attacker of the courier's team</returns>
+Attacker* FindNearestAlly(Courier courier)
+{
+	int nearestOffset = -1;
+	double currentDistance, nearestDistance = (double)MAP_DIMENSION * MAP_DIMENSION;
+	Attacker** teamAttackers = FindTeamAttackers(courier.GetTeam());
+
+	for (int i = 0; i < MAX_ATTACKERS_IN_TEAM; i++)
+	{
+		// Validation
+		if (attackers[i].GetHealth() <= 0)
+			continue;
+
+		currentDistance = ManhattanDistance(courier.GetLocation(), attackers[i].GetLocation());
+		if (currentDistance < nearestDistance)
+		{
+			nearestOffset = i;
+			nearestDistance = currentDistance;
+		}
+	}
+
+	return teamAttackers[nearestOffset];
+}
+
+/// <summary>
+/// Checks whether a bullet hit an enemy.
+/// </summary>
+/// <param name="bullet">The bullet to handle</param>
+void CheckBulletHit(Bullet* bullet)
+{
+	NPC** enemyTeam = FindTeam(bullet->GetTeam() == RED_TEAM ? BLUE_TEAM : RED_TEAM);
+	vector<Bullet*>::iterator bulletsIterator;
+
+	// Checks if any enemy is hit by the bullet
+	for (int i = 0; i < MAX_ATTACKERS_IN_TEAM + MAX_COURIERS_IN_TEAM; i++)
+		if (enemyTeam[i]->GetLocation() == bullet->GetLocation())
+		{
+			enemyTeam[i]->TakeDamage(1);
+			bulletsIterator = find(bullets.begin(), bullets.end(), bullet);
+			if (bulletsIterator != bullets.end())
+				bullets.erase(bullets.begin() + (bulletsIterator - bullets.begin()));
+		}
+}
+
+/// <summary>
+/// Explodes a grenade.
+/// </summary>
+/// <param name="grenade">The grenade to explode</param>
+void ExplodeGrenade(Grenade* grenade)
+{
+	Bullet** grenadeShards = grenade->GetShards();
+	vector<Grenade*>::iterator grenadesIterator = find(grenades.begin(), grenades.end(), grenade);
+
+	// Explodes the grenade and turns to manage its shards
+	for (int shardOffset = 0; shardOffset < MAX_SHARDS_IN_GRENADE; shardOffset++)
+		bullets.push_back(grenadeShards[shardOffset]);
+
+	// Removes the grenade from the grenades vector
+	if (grenadesIterator != grenades.end())
+		grenades.erase(grenades.begin() + (grenadesIterator - grenades.begin()));
+}
+
+/// <summary>
+/// Checks whether a grenade hit an enemy.
+/// </summary>
+/// <param name="grenade">The grenade to handle</param>
+void CheckGrenadeHit(Grenade* grenade)
+{
+	NPC** enemyTeam = FindTeam(grenade->GetTeam() == RED_TEAM ? BLUE_TEAM : RED_TEAM);
+
+	// Checks if any enemy is hit by the grenade
+	for (int i = 0; i < MAX_ATTACKERS_IN_TEAM + MAX_COURIERS_IN_TEAM; i++)
+		if (enemyTeam[i]->GetLocation() | grenade->GetLocation())
+		{
+			enemyTeam[i]->TakeDamage(MAX_HEALTH); // Instant death
+			ExplodeGrenade(grenade);
+			break;
+		}
 }
 
 /// <summary>
@@ -414,18 +486,18 @@ bool IsRoomOverlapping(int centerRow, int centerColumn, int height, int width)
 /// <param name="room">The room to place obstacles in</param>
 void PlaceObstacles(Room* room)
 {
-	int roomRowStart = (int)fabs(room->GetCenterPosition().GetRow() - room->GetHeight() / 2);
-	int roomRowEnd = (int)room->GetCenterPosition().GetRow() + room->GetHeight() / 2;
-	int roomColumnStart = (int)fabs(room->GetCenterPosition().GetColumn() - room->GetWidth() / 2);
-	int roomColumnEnd = (int)room->GetCenterPosition().GetColumn() + room->GetWidth() / 2;
+	int roomRowStart = (int)fabs(room->GetCenterPosition().GetRow() - room->GetHeight() / 2) + 3;
+	int roomRowEnd = ((int)room->GetCenterPosition().GetRow() + room->GetHeight() / 2) - 3;
+	int roomColumnStart = (int)fabs(room->GetCenterPosition().GetColumn() - room->GetWidth() / 2) + 3;
+	int roomColumnEnd = ((int)room->GetCenterPosition().GetColumn() + room->GetWidth() / 2) - 3;
 	int obstaclesCount = 2 + rand() % (MAX_OBSTACLES_IN_ROOM - 2), orientation = rand() % 2;
 	int height, width, row, column;
 
 	// Fills room with obstacles
 	for (int i = 0; i < obstaclesCount; i++)
 	{
-		height = orientation == 0 ? 1 + rand() % 3 : 0;
-		width = orientation == 1 ? 1 + rand() % 3 : 0;
+		height = orientation == 0 ? 1 + rand() % 2 : 0;
+		width = orientation == 1 ? 1 + rand() % 2 : 0;
 
 		do
 		{
@@ -555,7 +627,7 @@ void InitRooms()
 	// Fills each room with obstacles and supplies
 	for (int i = 0; i < MAX_ROOMS; i++)
 	{
-		//PlaceObstacles(&rooms[i]);
+		PlaceObstacles(&rooms[i]);
 		PlaceSupplies(&rooms[i]);
 	}
 }
@@ -604,23 +676,13 @@ void InitGame()
 }
 
 /// <summary>
-/// Initiates the security map.
-/// </summary>
-void InitSecurityMap()
-{
-	for (int row = 0; row < MAP_DIMENSION; row++)
-		for (int column = 0; column < MAP_DIMENSION; column++)
-			securityMap[row][column] = map[row][column] == WALL ? (MAP_DIMENSION * MAP_DIMENSION) : 0;
-}
-
-/// <summary>
 /// Initiates the map matrix.
 /// </summary>
 void InitMap()
 {
 	cout << "Initiating map...";
 
-	// Fills the map with Wall (empty map)
+	// Fills the map with WALL (empty map)
 	for (int row = 0; row < MAP_DIMENSION; row++)
 		for (int column = 0; column < MAP_DIMENSION; column++)
 			map[row][column] = WALL;
@@ -629,7 +691,9 @@ void InitMap()
 	InitRooms();
 
 	// Initiates the security map
-	InitSecurityMap();
+	for (int row = 0; row < MAP_DIMENSION; row++)
+		for (int column = 0; column < MAP_DIMENSION; column++)
+			securityMap[row][column] = map[row][column] == WALL ? (MAP_DIMENSION * MAP_DIMENSION) : 0;
 
 	cout << "complete.\n";
 }
@@ -664,14 +728,14 @@ void DrawMap()
 				glColor3d(0, 0, 1);				// Blue
 				break;
 			case ARMS:
-				glColor3d(0.54, 0.5, 0);		// Dark Yellow
+				glColor3d(1, 0.64, 0);			// Orange
 				break;
 			case MEDS:
-				glColor3d(0.56, 0.93, 0.56);	// Light Green
+				glColor3d(0, 1, 0);				// Green
 				break;
 			}
 
-			// draw square
+			// Draws the matrix cell as a square
 			glBegin(GL_POLYGON);
 			glVertex2d((double)column, (double)row);
 			glVertex2d((double)column + 1, (double)row);
@@ -711,8 +775,8 @@ void MoveAttacker(Attacker* attacker, Position newLocation)
 	int newRow = (int)newLocation.GetRow(), newColumn = (int)newLocation.GetColumn();
 
 	// Moves color-wise
-	map[oldRow][oldColumn] = attacker->GetPreviousCellContent(); // The cell Attacker leaves returns to its original color
-	attacker->SetPreviousCellContent(map[newRow][newColumn]);	// Attacker remembers the color of the new cell
+	map[oldRow][oldColumn] = attacker->GetSteppedOnSupply();
+	attacker->SetSteppedOnSupply(map[newRow][newColumn]);
 	map[newRow][newColumn] = attacker->GetTeam();
 
 	// Moves location-wise
@@ -721,7 +785,7 @@ void MoveAttacker(Attacker* attacker, Position newLocation)
 }
 
 /// <summary>
-/// Activates a courier.
+/// Moves a courier on the map.
 /// </summary>
 /// <param name="courier">The courier to activate</param>
 /// <param name="newLocation">The courier's new location</param>
@@ -774,11 +838,12 @@ Position FindNextLocation(NPC* npc)
 /// <param name="attacker">The attacker to activate</param>
 void IterateAttacker(Attacker* attacker)
 {
-	Bullet* bullet = attacker->GetBullet();
-	Grenade* grenade = attacker->GetGrenade();
 	Courier* teamCourier = FindTeamCourier(attacker->GetTeam());
 	NPC* nearestEnemy = FindNearestEnemy(*attacker);
-	Position newLocation;
+	Bullet* bullet = attacker->GetBullet();
+	Grenade* grenade = attacker->GetGrenade();
+	vector<Bullet*>::iterator bulletsIterator = find(bullets.begin(), bullets.end(), bullet);
+	vector<Grenade*>::iterator grenadesIterator = find(grenades.begin(), grenades.end(), grenade);
 
 	// Manages the attacker's states
 	if (attacker->IsSearchingEnemy())
@@ -801,16 +866,21 @@ void IterateAttacker(Attacker* attacker)
 	}
 
 	// Manages the attacker's weaponry (if there is any)
-	if ((bullet != nullptr) && (find(bullets.begin(), bullets.end(), bullet) == bullets.end()))
-		attacker->SetBullet(nullptr);
-	if ((grenade != nullptr) && (find(grenades.begin(), grenades.end(), grenade) == grenades.end()))
-		attacker->SetGrenade(nullptr);
+	if (bulletsIterator == bullets.end())
+		bullets.push_back(bullet);
+	if (grenadesIterator == grenades.end())
+		grenades.push_back(grenade);
 
-	// Checks whether a courier is needed
+	// Checks whether the team courier is called 
 	if (attacker->GetArms() == 0)
 		attacker->CallCourier(teamCourier, ARMS, TAKE);
+	else if (attacker->IsAllyRequiresSupply(attackers, ARMS))
+		attacker->CallCourier(teamCourier, ARMS, GIVE);
+
 	if (attacker->GetMeds() == 0)
 		attacker->CallCourier(teamCourier, MEDS, TAKE);
+	else if (attacker->IsAllyRequiresSupply(attackers, MEDS))
+		attacker->CallCourier(teamCourier, MEDS, GIVE);
 
 	MoveAttacker(attacker, FindNextLocation(attacker));
 }
@@ -825,7 +895,11 @@ void IterateCourier(Courier* courier)
 
 	// Manages the courier's states
 	if (courier->IsSearchingSupply())
+	{
 		courier->SetDestination(FindNearestSupply(*courier));
+		if (courier->IsCalled())
+			courier->GetActiveState()->Transform(courier); // SearchSupplyState -> SearchAllyState
+	}
 	else if (courier->IsSearchingAlly())
 	{
 		courier->SetDestination(nearestAlly->GetLocation());
@@ -835,7 +909,7 @@ void IterateCourier(Courier* courier)
 	else if (courier->IsSharingSupply())
 	{
 		courier->TradeSupply(nearestAlly);
-		courier->GetActiveState()->Transform(courier); // ShareSupplyState -> SearchAllyState (if called) / ShareSupplyState (if not called)
+		courier->GetActiveState()->Transform(courier); // ShareSupplyState -> SearchAllyState (if called) / SearchSupplyState (if not called)
 	}
 
 	MoveCourier(courier, FindNextLocation(courier));
@@ -857,7 +931,7 @@ void IterateTeam(int teamColor)
 		if (attackers[i].GetTeam() != teamColor)
 			continue;
 
-		if (attackers[i].GetHealth() <= 0)
+		if (attackers[i].GetHealth() == 0)
 			deadTeammates++;
 		else
 			IterateAttacker(&attackers[i]);
@@ -869,16 +943,16 @@ void IterateTeam(int teamColor)
 		if (couriers[i].GetTeam() != teamColor)
 			continue;
 
-		if (couriers[i].GetHealth() <= 0)
+		if (couriers[i].GetHealth() == 0)
 			deadTeammates++;
 		else
 			IterateCourier(&couriers[i]);
 	}
 
 	// Checks whether the entire team is dead (and the game is over)
-	gameOver = deadTeammates == MAX_ATTACKERS_IN_TEAM + MAX_COURIERS_IN_TEAM;
-	if (gameOver)
+	if (deadTeammates == MAX_ATTACKERS_IN_TEAM + MAX_COURIERS_IN_TEAM)
 	{
+		gameOver = true;
 		winningTeam = teamColor == RED_TEAM ? "Blue" : "Red";
 		cout << "Game Over. " << winningTeam << " team wins.\n";
 	}
@@ -889,10 +963,10 @@ void IterateTeam(int teamColor)
 /// </summary>
 void IterateGame()
 {
-	if (!gameOver)
-		IterateTeam(RED_TEAM);
-	if (!gameOver)
-		IterateTeam(BLUE_TEAM);
+	//if (!gameOver)
+	//	IterateTeam(RED_TEAM);
+	//if (!gameOver)
+	//	IterateTeam(BLUE_TEAM);
 
 	Sleep(100);
 }
@@ -924,17 +998,24 @@ void display()
 
 	for (int i = 0; i < bullets.size(); i++)
 	{
-		if (!bullets[i]->Move(map))
+		if (!bullets[i]->Move(map, securityMap))
 			bullets.erase(bullets.begin() + i);
 		else
+		{
 			bullets[i]->Draw();
+			CheckBulletHit(bullets[i]);
+		}
 	}
+
 	for (int i = 0; i < grenades.size(); i++)
 	{
 		if (!grenades[i]->Move(map, securityMap))
-			grenades.erase(grenades.begin() + i);
+			ExplodeGrenade(grenades[i]);
 		else
+		{
 			grenades[i]->Draw();
+			CheckGrenadeHit(grenades[i]);
+		}
 	}
 
 	glutSwapBuffers(); // show all

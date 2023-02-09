@@ -24,4 +24,4 @@ const int MAX_HEALTH = 100, MAX_ARMS = 5, MAX_MEDS = 3;
 
 // Weaponry related
 const double BULLET_STEP = 0.2, BULLET_SIZE = 0.001;
-const int SHARDS_IN_GRENADE = 20;
+const int MAX_SHARDS_IN_GRENADE = 16;

@@ -11,6 +11,8 @@ void Grenade::SetLocation(Position l) { location = l; }
 Position Grenade::GetDestination() { return destination; }
 void Grenade::SetDestination(Position d) { destination = d; }
 
+Bullet** Grenade::GetShards() { return shards; }
+
 int Grenade::GetTeam() { return team; }
 void Grenade::SetTeam(int t) { team = t; }
 
@@ -22,9 +24,6 @@ void Grenade::SetDirectionRow(double dR) { directionRow = dR; }
 
 double Grenade::GetDirectionColumn() { return directionColumn; }
 void Grenade::SetDirectionColumn(double dC) { directionColumn = dC; }
-
-bool Grenade::IsExploding() { return isExploding; }
-void Grenade::SetIsExploding(bool i) { isExploding = i; }
 
 // Constructors
 Grenade::Grenade() {}
@@ -39,7 +38,6 @@ Grenade::Grenade(Position l, Position d, int t)
 	SetAngle(angle);
 	SetDirectionRow(sin(angle));
 	SetDirectionColumn(cos(angle));
-	SetIsExploding(false);
 
 	InitShards();
 }
@@ -52,9 +50,9 @@ Grenade::~Grenade() {}
 /// </summary>
 void Grenade::InitShards()
 {
-	double alpha = 0, teta = (360.0 / SHARDS_IN_GRENADE) * PI / 180;
+	double alpha = 0, teta = (360.0 / MAX_SHARDS_IN_GRENADE) * PI / 180;
 
-	for (int i = 0; i < SHARDS_IN_GRENADE; i++, alpha += teta)
+	for (int i = 0; i < MAX_SHARDS_IN_GRENADE; i++, alpha += teta)
 		shards[i] = new Bullet(location, team, alpha);
 }
 
@@ -70,23 +68,8 @@ bool Grenade::Move(int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP
 	Position* newLocation;
 
 	// Validation
-	if (isExploding)
-	{
-		// Checks whether any of the shards is still moving
-		for (int i = 0; i < SHARDS_IN_GRENADE; i++)
-			if (shards[i]->Move(map))
-				return true;
-
-		return false;
-	}
-
 	if (location == destination)
-	{
-		isExploding = true;
-		Explode(map, securityMap);
-
-		return true;
-	}
+		return false;
 
 	// Moves the grenade by BULLET_STEP to direction (directionColumn, directionRow)
 	row = location.GetRow() + (directionRow * BULLET_STEP);
@@ -94,18 +77,13 @@ bool Grenade::Move(int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP
 	newLocation = new Position(row, column);
 	SetLocation(*newLocation);
 
-	return true;
-}
+	for (int i = 0; i < MAX_SHARDS_IN_GRENADE; i++)
+		shards[i]->SetLocation(*newLocation);
 
-/// <summary>
-/// Simulates a grenade behaviour.
-/// </summary>
-/// <param name="map">The map to simulate the grenade at</param>
-/// <param name="securityMap">The security map to simulate the bullet at</param>
-void Grenade::Explode(int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_DIMENSION][MAP_DIMENSION])
-{
-	for (int i = 0; i < SHARDS_IN_GRENADE; i++)
-		shards[i]->Fire(map, securityMap);
+	// Updates the security factor at (row, column)
+	securityMap[(int)row][(int)column] += BULLET_SIZE * MAX_SHARDS_IN_GRENADE;
+
+	return true;
 }
 
 /// <summary>
@@ -116,17 +94,11 @@ void Grenade::Draw()
 	int row = (int)location.GetRow(), column = (int)location.GetColumn();
 	double delta = 0.5;
 
-	if (isExploding)
-		for (int i = 0; i < SHARDS_IN_GRENADE; i++)
-			shards[i]->Draw();
-	else
-	{
-		glColor3d(0, 0.39, 0);	// Dark Green
-		glBegin(GL_POLYGON);
-		glVertex2d(column - delta, row);
-		glVertex2d(column, row + delta);
-		glVertex2d(column + delta, row);
-		glVertex2d(column, row - delta);
-		glEnd();
-	}
+	glColor3d(0, 0.39, 0);	// Dark Green
+	glBegin(GL_POLYGON);
+	glVertex2d(column - delta, row);
+	glVertex2d(column, row + delta);
+	glVertex2d(column + delta, row);
+	glVertex2d(column, row - delta);
+	glEnd();
 }

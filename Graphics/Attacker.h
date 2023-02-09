@@ -14,7 +14,7 @@ private:
 	// Fields
 	Bullet* bullet;
 	Grenade* grenade;
-	int previousCellContent;
+	int steppedOnSupply;
 	bool isSearchingEnemy, isSearchingShelter, isAttacking;
 
 public:
@@ -25,8 +25,8 @@ public:
 	Grenade* GetGrenade();
 	void SetGrenade(Grenade* g);
 
-	int GetPreviousCellContent();
-	void SetPreviousCellContent(int c);
+	int GetSteppedOnSupply();
+	void SetSteppedOnSupply(int s);
 
 	bool IsSearchingEnemy();
 	void SetIsSearchingEnemy(bool i);
@@ -49,4 +49,5 @@ public:
 	void Attack(Position destination, int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_DIMENSION][MAP_DIMENSION]);
 
 	bool HasLineOfSight(NPC npc, int map[MAP_DIMENSION][MAP_DIMENSION]);
+	bool IsAllyRequiresSupply(Attacker* attackers, int supply);
 };

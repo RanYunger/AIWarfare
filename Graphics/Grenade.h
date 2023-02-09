@@ -10,10 +10,9 @@ class Grenade
 private:
 	// Fields
 	Position location, destination;
-	Bullet* shards[SHARDS_IN_GRENADE];
+	Bullet* shards[MAX_SHARDS_IN_GRENADE];
 	int team;
 	double angle, directionRow, directionColumn;
-	bool isExploding;
 
 public:
 	// Properties
@@ -22,6 +21,8 @@ public:
 
 	Position GetDestination();
 	void SetDestination(Position d);
+
+	Bullet** GetShards();
 
 	int GetTeam();
 	void SetTeam(int t);
@@ -35,9 +36,6 @@ public:
 	double GetDirectionColumn();
 	void SetDirectionColumn(double dC);
 
-	bool IsExploding();
-	void SetIsExploding(bool i);
-
 	// Consturctors & Destructors
 	Grenade();
 	Grenade(Position l, Position d, int t);
@@ -45,7 +43,7 @@ public:
 
 	// Methods
 	void InitShards();
+
 	bool Move(int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_DIMENSION][MAP_DIMENSION]);
-	void Explode(int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_DIMENSION][MAP_DIMENSION]);
 	void Draw();
 };

@@ -35,8 +35,6 @@ public:
 	~Bullet();
 
 	// Methods
-	bool Move(int map[MAP_DIMENSION][MAP_DIMENSION]);
-	void Fire(int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_DIMENSION][MAP_DIMENSION]);
+	bool Move(int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_DIMENSION][MAP_DIMENSION]);
 	void Draw();
 };
-

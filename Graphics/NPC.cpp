@@ -1,7 +1,6 @@
 // Includes
 #include "NPC.h"
 
-#include <math.h>
 #include "Settings.h"
 
 // Properties
@@ -35,10 +34,8 @@ void NPC::SetMeds(int m) { meds = m; }
 // Constructors & Destructors
 NPC::NPC()
 {
-	Position* defaultPosition = new Position(-1, -1);
-
-	SetLocation(*defaultPosition);
-	SetDestination(*defaultPosition);
+	SetLocation(EMPTY_POSITION);
+	SetDestination(EMPTY_POSITION);
 	SetActiveState(nullptr);
 	SetInterruptedState(nullptr);
 	SetHealth(MAX_HEALTH);

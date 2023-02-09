@@ -35,7 +35,7 @@ Courier::Courier()
 	SetIsCalled(false);
 
 	SetActiveState((State*)new SearchSupplyState());
-	activeState->OnEnter(this);
+	GetActiveState()->OnEnter(this);
 }
 Courier::~Courier() {}
 
@@ -91,7 +91,7 @@ void Courier::TakeMeds(Attacker* ally)
 /// <summary>
 /// Picks a supply.
 /// </summary>
-/// <param name="supply">The supply type</param>
+/// <param name="supply">The supply to pick</param>
 void Courier::PickSupply(int supply)
 {
 	if (supply == ARMS)
@@ -110,16 +110,16 @@ void Courier::TradeSupply(Attacker* ally)
 
 	if (transaction == GIVE)
 	{
-		if (supply == ARMS)
+		if ((supply == ARMS) && (arms > 0))
 			GiveArms(ally);
-		else
+		else if ((supply == MEDS) && (meds > 0))
 			GiveMeds(ally);
 	}
 	else if (transaction == TAKE)
 	{
 		if (supply == ARMS)
 			TakeArms(ally);
-		else
+		else if (supply == MEDS)
 			TakeMeds(ally);
 	}
 }
