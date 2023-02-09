@@ -9,7 +9,7 @@ class Grenade
 {
 private:
 	// Fields
-	Position location;
+	Position location, destination;
 	Bullet* shards[SHARDS_IN_GRENADE];
 	int team;
 	double angle, directionRow, directionColumn;
@@ -19,6 +19,9 @@ public:
 	// Properties
 	Position GetLocation();
 	void SetLocation(Position l);
+
+	Position GetDestination();
+	void SetDestination(Position d);
 
 	int GetTeam();
 	void SetTeam(int t);
@@ -37,7 +40,7 @@ public:
 
 	// Consturctors & Destructors
 	Grenade();
-	Grenade(Position l, int t, double a);
+	Grenade(Position l, Position d, int t);
 	~Grenade();
 
 	// Methods

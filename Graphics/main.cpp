@@ -53,7 +53,7 @@ double ManhattanDistance(Position p1, Position p2)
 /// </summary>
 /// <param name="attacker">The attacker that searches an enemy</param>
 /// <returns>The nearest enemy to the attacker</returns>
-NPC FindNearestEnemy(Attacker attacker)
+NPC* FindNearestEnemy(Attacker attacker)
 {
 	int enemyTeamColor = attacker.GetTeam() == RED_TEAM ? BLUE_TEAM : RED_TEAM;
 	int nearestAttackerOffset = -1, nearestCourierOffset = -1;
@@ -89,15 +89,15 @@ NPC FindNearestEnemy(Attacker attacker)
 		}
 	}
 
-	return nearestAttackerDistance < nearestCourierDistance ? (NPC)attackers[nearestAttackerOffset] : (NPC)couriers[nearestCourierOffset];
+	return nearestAttackerDistance < nearestCourierDistance ? (NPC*)&attackers[nearestAttackerOffset] : (NPC*)&couriers[nearestCourierOffset];
 }
 
 /// <summary>
-/// Finds the Attacker nearest to a courier.
+/// Finds the teammate attacker nearest to a courier.
 /// </summary>
-/// <param name="courier">The courier that searches a teammate Attacker</param>
+/// <param name="courier">The courier that searches a teammate attacker</param>
 /// <returns>The nearest Attacker of the courier's team</returns>
-Attacker FindNearestAttacker(Courier courier)
+Attacker* FindNearestAlly(Courier courier)
 {
 	int nearestOffset = -1;
 	double currentDistance, nearestDistance = (double)MAP_DIMENSION * MAP_DIMENSION;
@@ -105,7 +105,7 @@ Attacker FindNearestAttacker(Courier courier)
 	for (int i = 0; i < 2 * MAX_ATTACKERS_IN_TEAM; i++)
 	{
 		// Validation
-		if ((attackers[i].GetTeam() != courier.GetTeam()) || (attackers[i].GetHealth() <= 0))
+		if ((attackers[i].GetHealth() <= 0) || (attackers[i].GetTeam() != courier.GetTeam()))
 			continue;
 
 		currentDistance = ManhattanDistance(courier.GetLocation(), attackers[i].GetLocation());
@@ -116,7 +116,35 @@ Attacker FindNearestAttacker(Courier courier)
 		}
 	}
 
-	return attackers[nearestOffset];
+	return &attackers[nearestOffset];
+}
+
+/// <summary>
+/// Finds a courier by its team.
+/// </summary>
+/// <param name="teamColor">The courier's team</param>
+/// <returns>The team's courier</returns>
+Courier* FindTeamCourier(int teamColor)
+{
+	for (int i = 0; i < 2 * MAX_COURIERS_IN_TEAM; i++)
+		if ((couriers[i].GetHealth() > 0) && (couriers[i].GetTeam() == teamColor))
+			return &couriers[i];
+
+	return nullptr;
+}
+
+/// <summary>
+/// Finds the ID of the room which contains a given NPC.
+/// </summary>
+/// <param name="npc">The NPC to check</param>
+/// <returns>The ID of the room the NPC is in, -1 otherwise (the NPC is inside a tunnel)</returns>
+int FindRoom(NPC* npc)
+{
+	for (int i = 0; i < MAX_ROOMS; i++)
+		if (rooms[i].IsNPCInside(npc))
+			return i;
+
+	return -1;
 }
 
 /// <summary>
@@ -124,14 +152,14 @@ Attacker FindNearestAttacker(Courier courier)
 /// </summary>
 /// <param name="courier">The courier that searches for supplies</param>
 /// <returns>The location of the nearest supply</returns>
-Position FindNearestSupply(Courier* courier)
+Position FindNearestSupply(Courier courier)
 {
 	int nearestOffset = -1;
 	double currentDistance, nearestDistance = (double)MAP_DIMENSION * MAP_DIMENSION;
 
 	for (int i = 0; i < supplies.size(); i++)
 	{
-		currentDistance = ManhattanDistance(courier->GetLocation(), *supplies[i]);
+		currentDistance = ManhattanDistance(courier.GetLocation(), *supplies[i]);
 		if (currentDistance < nearestDistance)
 		{
 			nearestOffset = i;
@@ -562,7 +590,7 @@ void InitGame()
 	}
 
 	// Initiates 2 couriers (1 on each team)
-	for (int i = 0; i < MAX_COURIERS_IN_TEAM * 2; i++)
+	for (int i = 0; i < 2 * MAX_COURIERS_IN_TEAM; i++)
 	{
 		spawnLocation = RandomizeNPCSpawn(i < MAX_COURIERS_IN_TEAM ? &rooms[redTeamSpawnRoom] : &rooms[blueTeamSpawnRoom],
 			i < MAX_COURIERS_IN_TEAM ? RED_TEAM : BLUE_TEAM);
@@ -672,23 +700,24 @@ void Restart()
 }
 
 /// <summary>
-/// Activates a Attacker.
+/// Moves an attacker on the map.
 /// </summary>
-/// <param name="Attacker">The Attacker to activate</param>
-/// <param name="newLocation">The Attacker's new location</param>
-void MoveAttacker(Attacker* Attacker, Position newLocation)
+/// <param name="attacker">The attacker to move</param>
+/// <param name="newLocation">The attacker's new location</param>
+void MoveAttacker(Attacker* attacker, Position newLocation)
 {
-	Position oldLocation = Attacker->GetLocation();
+	Position oldLocation = attacker->GetLocation();
 	int oldRow = (int)oldLocation.GetRow(), oldColumn = (int)oldLocation.GetColumn();
 	int newRow = (int)newLocation.GetRow(), newColumn = (int)newLocation.GetColumn();
 
 	// Moves color-wise
-	map[oldRow][oldColumn] = Attacker->GetPreviousCellContent(); // The cell Attacker leaves returns to its original color
-	Attacker->SetPreviousCellContent(map[newRow][newColumn]);	// Attacker remembers the color of the new cell
-	map[newRow][newColumn] = Attacker->GetTeam();
+	map[oldRow][oldColumn] = attacker->GetPreviousCellContent(); // The cell Attacker leaves returns to its original color
+	attacker->SetPreviousCellContent(map[newRow][newColumn]);	// Attacker remembers the color of the new cell
+	map[newRow][newColumn] = attacker->GetTeam();
 
 	// Moves location-wise
-	Attacker->SetLocation(newLocation);
+	attacker->SetLocation(newLocation);
+	attacker->SetRoom(FindRoom(attacker));
 }
 
 /// <summary>
@@ -722,20 +751,7 @@ void MoveCourier(Courier* courier, Position newLocation)
 
 	// Moves location-wise
 	courier->SetLocation(newLocation);
-}
-
-/// <summary>
-/// Finds the ID of the room which contains a given NPC.
-/// </summary>
-/// <param name="npc">The NPC to check</param>
-/// <returns>The ID of the room the NPC is in, -1 otherwise (the NPC is inside a tunnel)</returns>
-int FindNPCContainer(NPC* npc)
-{
-	for (int i = 0; i < MAX_ROOMS; i++)
-		if (rooms[i].IsNPCInside(npc))
-			return i;
-
-	return -1;
+	courier->SetRoom(FindRoom(courier));
 }
 
 /// <summary>
@@ -760,32 +776,43 @@ void IterateAttacker(Attacker* attacker)
 {
 	Bullet* bullet = attacker->GetBullet();
 	Grenade* grenade = attacker->GetGrenade();
+	Courier* teamCourier = FindTeamCourier(attacker->GetTeam());
+	NPC* nearestEnemy = FindNearestEnemy(*attacker);
+	Position newLocation;
 
-	// Manages the attacker's bullet (if there's one)
-	if ((bullet != nullptr) && (!bullet->Move(map)))
+	// Manages the attacker's states
+	if (attacker->IsSearchingEnemy())
 	{
-		for (int i = 0; i < bullets.size(); i++)
-			if (bullets[i] == bullet)
-			{
-				bullets.erase(bullets.begin() + i);
-				break;
-			}
+		attacker->SetDestination(nearestEnemy->GetLocation());
 
+		if ((attacker->GetRoom() == nearestEnemy->GetRoom()) && (attacker->HasLineOfSight(*nearestEnemy, map)))
+			attacker->GetActiveState()->Transform(attacker); // SearchEnemyState -> AttackState
+	}
+	else if (attacker->IsAttacking())
+	{
+		attacker->Attack(attacker->GetDestination(), map, securityMap);
+		attacker->GetActiveState()->Transform(attacker); // AttackState -> SearchShelterState
+	}
+	else if (attacker->IsSearchingShelter())
+	{
+		attacker->SetDestination(teamCourier->GetLocation());
+		if (attacker->GetRoom() == teamCourier->GetRoom())
+			attacker->GetActiveState()->Transform(attacker); // SearchShelterState -> SearchEnemyState
+	}
+
+	// Manages the attacker's weaponry (if there is any)
+	if ((bullet != nullptr) && (find(bullets.begin(), bullets.end(), bullet) == bullets.end()))
 		attacker->SetBullet(nullptr);
-	}
-
-	// Manages the attacker's grenade (if there's one)
-	if ((grenade != nullptr) && (!grenade->Move(map, securityMap)))
-	{
-		for (int i = 0; i < grenades.size(); i++)
-			if (grenades[i] == grenade)
-			{
-				grenades.erase(grenades.begin() + i);
-				break;
-			}
-
+	if ((grenade != nullptr) && (find(grenades.begin(), grenades.end(), grenade) == grenades.end()))
 		attacker->SetGrenade(nullptr);
-	}
+
+	// Checks whether a courier is needed
+	if (attacker->GetArms() == 0)
+		attacker->CallCourier(teamCourier, ARMS, TAKE);
+	if (attacker->GetMeds() == 0)
+		attacker->CallCourier(teamCourier, MEDS, TAKE);
+
+	MoveAttacker(attacker, FindNextLocation(attacker));
 }
 
 /// <summary>
@@ -794,7 +821,24 @@ void IterateAttacker(Attacker* attacker)
 /// <param name="courier">The courier to activate</param>
 void IterateCourier(Courier* courier)
 {
-	// TODO: COMPLETE
+	Attacker* nearestAlly = FindNearestAlly(*courier);
+
+	// Manages the courier's states
+	if (courier->IsSearchingSupply())
+		courier->SetDestination(FindNearestSupply(*courier));
+	else if (courier->IsSearchingAlly())
+	{
+		courier->SetDestination(nearestAlly->GetLocation());
+		if (courier->GetLocation() | nearestAlly->GetLocation())
+			courier->GetActiveState()->Transform(courier); // SearchAllyState -> ShareSupplyState
+	}
+	else if (courier->IsSharingSupply())
+	{
+		courier->TradeSupply(nearestAlly);
+		courier->GetActiveState()->Transform(courier); // ShareSupplyState -> SearchAllyState (if called) / ShareSupplyState (if not called)
+	}
+
+	MoveCourier(courier, FindNextLocation(courier));
 }
 
 /// <summary>
@@ -853,28 +897,6 @@ void IterateGame()
 	Sleep(100);
 }
 
-/// <summary>
-/// Toggles the security map.
-/// </summary>
-void ToggleSecurityMap()
-{
-	int row, column;
-
-	if ((securityMapVisible = !securityMapVisible))
-		for (int i = 0; i < 2500; i++)
-		{
-			row = MAP_DIMENSION * ((rand() % WINDOW_HEIGHT) / (double)WINDOW_HEIGHT);
-			column = MAP_DIMENSION * ((rand() % WINDOW_WIDTH) / (double)WINDOW_WIDTH);
-
-			if (map[row][column] == SPACE)
-			{
-				// TODO: COMPLETE
-				//pg = new Grenade(xx, yy);
-				//pg->SimulateExplosion(maze, security_map);
-			}
-		}
-}
-
 // Default Methods
 
 void CreateMenu(int choice)
@@ -883,7 +905,7 @@ void CreateMenu(int choice)
 	{
 	case -1: exit(0); break;
 	case 0: restart = true; break;
-	case 1: ToggleSecurityMap(); break;
+	case 1: securityMapVisible = !securityMapVisible; break;
 	}
 }
 void init()
@@ -901,9 +923,19 @@ void display()
 	DrawMap();
 
 	for (int i = 0; i < bullets.size(); i++)
-		bullets[i]->Draw();
+	{
+		if (!bullets[i]->Move(map))
+			bullets.erase(bullets.begin() + i);
+		else
+			bullets[i]->Draw();
+	}
 	for (int i = 0; i < grenades.size(); i++)
-		grenades[i]->Draw();
+	{
+		if (!grenades[i]->Move(map, securityMap))
+			grenades.erase(grenades.begin() + i);
+		else
+			grenades[i]->Draw();
+	}
 
 	glutSwapBuffers(); // show all
 }

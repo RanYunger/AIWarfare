@@ -1,6 +1,7 @@
 #pragma once
 
 // Includes
+#include <math.h>
 
 class Position
 {
@@ -23,4 +24,11 @@ public:
 
 	// Methods
 	bool operator == (const Position& other) { return (row == other.row) && (column == other.column); }
+	bool operator != (const Position& other) { return (row != other.row) || (column != other.column); }
+	bool operator | (const Position& other)
+	{
+		double rowDiff = fabs(row - other.row), columnDiff = fabs(column - other.column);
+
+		return rowDiff + columnDiff == 1;
+	}
 };

@@ -2,8 +2,11 @@
 
 // Includes
 #include "Bullet.h"
+#include "Courier.h"
 #include "Grenade.h"
 #include "NPC.h"
+
+class Courier;
 
 class Attacker : public NPC
 {
@@ -12,7 +15,7 @@ private:
 	Bullet* bullet;
 	Grenade* grenade;
 	int previousCellContent;
-	bool isSearchingEnemy, isSearchingShelter, isAttacking, isCallingCourier;
+	bool isSearchingEnemy, isSearchingShelter, isAttacking;
 
 public:
 	// Properties
@@ -34,17 +37,16 @@ public:
 	bool IsAttacking();
 	void SetIsAttacking(bool i);
 
-	bool IsCallingCourier();
-	void SetIsCallingCourier(bool i);
-
 	// Constructors & Destructors
 	Attacker();
 	~Attacker();
 
 	// Methods
-	void ShootBullet(int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_DIMENSION][MAP_DIMENSION], double angle);
-	void ThrowGranade(int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_DIMENSION][MAP_DIMENSION], double angle);
+	void CallCourier(Courier* courier, int supply, int transaction);
+
+	void ShootBullet(double angle, int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_DIMENSION][MAP_DIMENSION]);
+	void ThrowGranade(Position destination, int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_DIMENSION][MAP_DIMENSION]);
 	void Attack(Position destination, int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_DIMENSION][MAP_DIMENSION]);
 
-	bool HasLineOfSight(NPC* npc, int map[MAP_DIMENSION][MAP_DIMENSION]);
+	bool HasLineOfSight(NPC npc, int map[MAP_DIMENSION][MAP_DIMENSION]);
 };

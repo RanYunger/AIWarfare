@@ -8,6 +8,9 @@
 Position Grenade::GetLocation() { return location; }
 void Grenade::SetLocation(Position l) { location = l; }
 
+Position Grenade::GetDestination() { return destination; }
+void Grenade::SetDestination(Position d) { destination = d; }
+
 int Grenade::GetTeam() { return team; }
 void Grenade::SetTeam(int t) { team = t; }
 
@@ -25,13 +28,17 @@ void Grenade::SetIsExploding(bool i) { isExploding = i; }
 
 // Constructors
 Grenade::Grenade() {}
-Grenade::Grenade(Position l, int t, double a)
+Grenade::Grenade(Position l, Position d, int t)
 {
+	double dRow = destination.GetRow() - location.GetRow(), dColumn = destination.GetColumn() - location.GetColumn();
+	double angle = atan(dRow / dColumn);
+
 	SetLocation(l);
+	SetDestination(d);
 	SetTeam(t);
-	SetAngle(a);
-	SetDirectionRow(sin(a));
-	SetDirectionColumn(cos(a));
+	SetAngle(angle);
+	SetDirectionRow(sin(angle));
+	SetDirectionColumn(cos(angle));
 	SetIsExploding(false);
 
 	InitShards();
@@ -73,8 +80,7 @@ bool Grenade::Move(int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP
 		return false;
 	}
 
-	row = location.GetRow(); column = location.GetColumn();
-	if (map[(int)row][(int)column] == WALL)
+	if (location == destination)
 	{
 		isExploding = true;
 		Explode(map, securityMap);
@@ -83,8 +89,8 @@ bool Grenade::Move(int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP
 	}
 
 	// Moves the grenade by BULLET_STEP to direction (directionColumn, directionRow)
-	column += GetDirectionColumn() * BULLET_STEP;
-	row += GetDirectionRow() * BULLET_STEP;
+	row = location.GetRow() + (directionRow * BULLET_STEP);
+	column = location.GetColumn() + (directionColumn * BULLET_STEP);
 	newLocation = new Position(row, column);
 	SetLocation(*newLocation);
 

@@ -5,6 +5,12 @@
 #include "Settings.h"
 
 // Properties
+int Courier::GetSupply() { return supply; }
+void Courier::SetSupply(int s) { supply = s; }
+
+int Courier::GetTransaction() { return transaction; }
+void Courier::SetTransaction(int t) { transaction = t; }
+
 bool Courier::IsSearchingSupply() { return isSearchingSupply; }
 void Courier::SetIsSearchingSupply(bool i) { isSearchingSupply = i; }
 
@@ -21,6 +27,8 @@ void Courier::SetIsCalled(bool i) { isCalled = i; }
 Courier::Courier()
 	: NPC()
 {
+	SetSupply(-1);
+	SetTransaction(-1);
 	SetIsSharingSupply(false);
 	SetIsSearchingAlly(false);
 	SetIsSharingSupply(false);
@@ -33,50 +41,50 @@ Courier::~Courier() {}
 
 // Methods
 /// <summary>
-/// Gives arms to a teammate.
+/// Gives arms to an ally.
 /// </summary>
-/// <param name="teammate">The teammate who takes the arms</param>
-void Courier::GiveArms(Attacker* teammate)
+/// <param name="ally">The ally who takes the arms</param>
+void Courier::GiveArms(Attacker* ally)
 {
-	int teammateArms = teammate->GetArms();
+	int allyArms = ally->GetArms();
 
-	teammate->SetArms(teammateArms + 1 >= MAX_ARMS ? MAX_ARMS : teammateArms + 1);
+	ally->SetArms(allyArms + 1 >= MAX_ARMS ? MAX_ARMS : allyArms + 1);
 	arms = arms - 1 <= 0 ? 0 : arms - 1;
 }
 
 /// <summary>
-/// Take arms from a teammate.
+/// Take arms from an ally.
 /// </summary>
-/// <param name="teammate">The teammate to take arms from</param>
-void Courier::TakeArms(Attacker* teammate)
+/// <param name="ally">The ally to take arms from</param>
+void Courier::TakeArms(Attacker* ally)
 {
-	int teammateArms = teammate->GetArms();
+	int allyArms = ally->GetArms();
 
-	teammate->SetArms(teammateArms - 1 <= 0 ? 0 : teammateArms - 1);
+	ally->SetArms(allyArms - 1 <= 0 ? 0 : allyArms - 1);
 	arms = arms + 1 >= MAX_ARMS ? MAX_ARMS : arms + 1;
 }
 
 /// <summary>
-/// Gives meds to a teammate.
+/// Gives meds to an ally.
 /// </summary>
-/// <param name="teammate">The teammate who takes the meds</param>
-void Courier::GiveMeds(Attacker* teammate)
+/// <param name="ally">The ally who takes the meds</param>
+void Courier::GiveMeds(Attacker* ally)
 {
-	int teammateMeds = teammate->GetMeds();
+	int allyMeds = ally->GetMeds();
 
-	teammate->SetMeds(teammateMeds + 1 >= MAX_MEDS ? MAX_MEDS : teammateMeds + 1);
+	ally->SetMeds(allyMeds + 1 >= MAX_MEDS ? MAX_MEDS : allyMeds + 1);
 	meds = meds - 1 <= 0 ? 0 : meds - 1;
 }
 
 /// <summary>
-/// Take meds from a teammate.
+/// Take meds from an ally.
 /// </summary>
-/// <param name="teammate">The teammate to take meds from</param>
-void Courier::TakeMeds(Attacker* teammate)
+/// <param name="ally">The ally to take meds from</param>
+void Courier::TakeMeds(Attacker* ally)
 {
-	int teammateMeds = teammate->GetMeds();
+	int allyMeds = ally->GetMeds();
 
-	teammate->SetMeds(teammateMeds - 1 <= 0 ? 0 : teammateMeds - 1);
+	ally->SetMeds(allyMeds - 1 <= 0 ? 0 : allyMeds - 1);
 	meds = meds + 1 >= MAX_MEDS ? MAX_MEDS : meds + 1;
 }
 
@@ -90,4 +98,28 @@ void Courier::PickSupply(int supply)
 		arms++;
 	else if (supply == MEDS)
 		meds++;
+}
+
+/// <summary>
+/// Trades a supply with an ally
+/// </summary>
+/// <param name="ally">The ally to trade with</param>
+void Courier::TradeSupply(Attacker* ally)
+{
+	isCalled = false;
+
+	if (transaction == GIVE)
+	{
+		if (supply == ARMS)
+			GiveArms(ally);
+		else
+			GiveMeds(ally);
+	}
+	else if (transaction == TAKE)
+	{
+		if (supply == ARMS)
+			TakeArms(ally);
+		else
+			TakeMeds(ally);
+	}
 }

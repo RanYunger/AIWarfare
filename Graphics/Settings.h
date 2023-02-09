@@ -5,6 +5,7 @@
 
 // Constants
 const double PI = 3.1415;
+const int GIVE = 0, TAKE = 1;
 const Position EMPTY_POSITION;
 
 // Window related
