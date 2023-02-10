@@ -50,9 +50,9 @@ Grenade::~Grenade() {}
 /// </summary>
 void Grenade::InitShards()
 {
-	double alpha = 0, teta = (360.0 / MAX_SHARDS_IN_GRENADE) * PI / 180;
+	double alpha = 0, teta = (360.0 / SHARDS_IN_GRENADE) * PI / 180;
 
-	for (int i = 0; i < MAX_SHARDS_IN_GRENADE; i++, alpha += teta)
+	for (int i = 0; i < SHARDS_IN_GRENADE; i++, alpha += teta)
 		shards[i] = new Bullet(location, team, alpha);
 }
 
@@ -77,11 +77,11 @@ bool Grenade::Move(int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP
 	newLocation = new Position(row, column);
 	SetLocation(*newLocation);
 
-	for (int i = 0; i < MAX_SHARDS_IN_GRENADE; i++)
+	for (int i = 0; i < SHARDS_IN_GRENADE; i++)
 		shards[i]->SetLocation(*newLocation);
 
 	// Updates the security factor at (row, column)
-	securityMap[(int)row][(int)column] += BULLET_SIZE * MAX_SHARDS_IN_GRENADE;
+	securityMap[(int)row][(int)column] += BULLET_SIZE * SHARDS_IN_GRENADE;
 
 	return true;
 }

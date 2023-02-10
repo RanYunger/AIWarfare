@@ -52,4 +52,13 @@ NPC::~NPC() {}
 /// Inflicts damage to the NPC's health.
 /// </summary>
 /// <param name="damage">The damage to inflict</param>
-void NPC::TakeDamage(int damage) { SetHealth(health - damage <= 0 ? 0 : health - damage); }
+void NPC::TakeDamage(int damage)
+{
+	health = health - damage <= 0 ? 0 : health - damage;
+
+	if (meds > 0)
+	{
+		health += HEALTH_BOOST;
+		meds--;
+	}
+}

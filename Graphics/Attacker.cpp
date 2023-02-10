@@ -48,12 +48,12 @@ Attacker::~Attacker() {}
 /// </summary>
 /// <param name="courier">The teammate courier to call</param>
 /// <param name="supply">The supply the courier is called for</param>
-/// <param name="transaction">The type of transaction to be made with the courier</param>
+/// <param name="transaction">The type of transaction (give or take) to be made with the courier</param>
 void Attacker::CallCourier(Courier* courier, int supply, int transaction)
 {
 	courier->SetIsCalled(true);
 	courier->SetSupply(supply);
-	courier->SetTransaction(transaction);
+	courier->SetTransaction(transaction == GIVE ? TAKE : GIVE);
 }
 
 /// <summary>
@@ -129,7 +129,7 @@ bool Attacker::HasLineOfSight(NPC npc, int map[MAP_DIMENSION][MAP_DIMENSION])
 /// <returns>True if the supply is required, False otherwise</returns>
 bool Attacker::IsAllyRequiresSupply(Attacker* attackers, int supply)
 {
-	for (int i = 0; i < MAX_ATTACKERS_IN_TEAM; i++)
+	for (int i = 0; i < ATTACKERS_IN_TEAM; i++)
 	{
 		// Validation
 		if ((attackers[i].GetHealth() == 0) || (attackers[i].GetTeam() != team))

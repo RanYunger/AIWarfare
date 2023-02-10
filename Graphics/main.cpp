@@ -25,8 +25,8 @@ int map[MAP_DIMENSION][MAP_DIMENSION] = { 0 }, mapCopy[MAP_DIMENSION][MAP_DIMENS
 double securityMap[MAP_DIMENSION][MAP_DIMENSION] = { 0 };
 
 Room rooms[MAX_ROOMS];
-Attacker attackers[2 * MAX_ATTACKERS_IN_TEAM];
-Courier couriers[2 * MAX_COURIERS_IN_TEAM];
+Attacker attackers[2 * ATTACKERS_IN_TEAM];
+Courier couriers[2 * COURIERS_IN_TEAM];
 
 vector<Position*> supplies;
 vector<Bullet*> bullets;
@@ -55,11 +55,11 @@ double ManhattanDistance(Position p1, Position p2)
 /// <returns>The team's attackers</returns>
 Attacker** FindTeamAttackers(int teamColor)
 {
-	Attacker* teamAttackers[MAX_ATTACKERS_IN_TEAM];
+	Attacker* teamAttackers[ATTACKERS_IN_TEAM];
 
-	for (int i = 0; i < 2 * MAX_ATTACKERS_IN_TEAM; i++)
+	for (int i = 0; i < 2 * ATTACKERS_IN_TEAM; i++)
 		if ((attackers[i].GetHealth() > 0) && (attackers[i].GetTeam() == teamColor))
-			teamAttackers[i / MAX_ATTACKERS_IN_TEAM] = &attackers[i];
+			teamAttackers[i / ATTACKERS_IN_TEAM] = &attackers[i];
 
 	return teamAttackers;
 }
@@ -71,7 +71,7 @@ Attacker** FindTeamAttackers(int teamColor)
 /// <returns>The team's courier</returns>
 Courier* FindTeamCourier(int teamColor)
 {
-	for (int i = 0; i < 2 * MAX_COURIERS_IN_TEAM; i++)
+	for (int i = 0; i < 2 * COURIERS_IN_TEAM; i++)
 		if ((couriers[i].GetHealth() > 0) && (couriers[i].GetTeam() == teamColor))
 			return &couriers[i];
 
@@ -87,7 +87,7 @@ NPC** FindTeam(int teamColor)
 {
 	Attacker** teamAttackers = FindTeamAttackers(teamColor);
 	Courier* teamCourier = FindTeamCourier(teamColor);
-	NPC* team[MAX_ATTACKERS_IN_TEAM + MAX_COURIERS_IN_TEAM] = { teamAttackers[0], teamAttackers[1], teamCourier };
+	NPC* team[TEAM_SIZE] = { teamAttackers[0], teamAttackers[1], teamCourier };
 
 	return team;
 }
@@ -104,7 +104,7 @@ NPC* FindNearestEnemy(Attacker attacker)
 	NPC** enemyTeam = FindTeam(enemyTeamColor);
 
 	// Finds the enemy (attacker / courier) nearest to the attacker
-	for (int i = 0; i < MAX_ATTACKERS_IN_TEAM + MAX_COURIERS_IN_TEAM; i++)
+	for (int i = 0; i < TEAM_SIZE; i++)
 	{
 		// Validation
 		if (enemyTeam[i]->GetHealth() <= 0)
@@ -132,7 +132,7 @@ Attacker* FindNearestAlly(Courier courier)
 	double currentDistance, nearestDistance = (double)MAP_DIMENSION * MAP_DIMENSION;
 	Attacker** teamAttackers = FindTeamAttackers(courier.GetTeam());
 
-	for (int i = 0; i < MAX_ATTACKERS_IN_TEAM; i++)
+	for (int i = 0; i < ATTACKERS_IN_TEAM; i++)
 	{
 		// Validation
 		if (attackers[i].GetHealth() <= 0)
@@ -159,7 +159,7 @@ void CheckBulletHit(Bullet* bullet)
 	vector<Bullet*>::iterator bulletsIterator;
 
 	// Checks if any enemy is hit by the bullet
-	for (int i = 0; i < MAX_ATTACKERS_IN_TEAM + MAX_COURIERS_IN_TEAM; i++)
+	for (int i = 0; i < TEAM_SIZE; i++)
 		if (enemyTeam[i]->GetLocation() == bullet->GetLocation())
 		{
 			enemyTeam[i]->TakeDamage(1);
@@ -179,7 +179,7 @@ void ExplodeGrenade(Grenade* grenade)
 	vector<Grenade*>::iterator grenadesIterator = find(grenades.begin(), grenades.end(), grenade);
 
 	// Explodes the grenade and turns to manage its shards
-	for (int shardOffset = 0; shardOffset < MAX_SHARDS_IN_GRENADE; shardOffset++)
+	for (int shardOffset = 0; shardOffset < SHARDS_IN_GRENADE; shardOffset++)
 		bullets.push_back(grenadeShards[shardOffset]);
 
 	// Removes the grenade from the grenades vector
@@ -196,7 +196,7 @@ void CheckGrenadeHit(Grenade* grenade)
 	NPC** enemyTeam = FindTeam(grenade->GetTeam() == RED_TEAM ? BLUE_TEAM : RED_TEAM);
 
 	// Checks if any enemy is hit by the grenade
-	for (int i = 0; i < MAX_ATTACKERS_IN_TEAM + MAX_COURIERS_IN_TEAM; i++)
+	for (int i = 0; i < TEAM_SIZE; i++)
 		if (enemyTeam[i]->GetLocation() | grenade->GetLocation())
 		{
 			enemyTeam[i]->TakeDamage(MAX_HEALTH); // Instant death
@@ -278,7 +278,7 @@ Node* FindMinimalFNode()
 bool IsValidNPCSpawn(Position spawnPosition, int teamColor)
 {
 	// Checks whether any teammate is already in the designated spawn location
-	for (int i = 0; i < 2 * MAX_ATTACKERS_IN_TEAM; i++)
+	for (int i = 0; i < 2 * ATTACKERS_IN_TEAM; i++)
 	{
 		// Validation
 		if ((attackers[i].GetTeam() != teamColor) || (attackers[i].GetHealth() <= 0))
@@ -288,7 +288,7 @@ bool IsValidNPCSpawn(Position spawnPosition, int teamColor)
 			return false;
 	}
 
-	for (int i = 0; i < 2 * MAX_COURIERS_IN_TEAM; i++)
+	for (int i = 0; i < 2 * COURIERS_IN_TEAM; i++)
 	{
 		// Validation
 		if ((couriers[i].GetTeam() != teamColor) || (couriers[i].GetHealth() <= 0))
@@ -542,7 +542,7 @@ void PlaceSupplies(Room* room)
 	int roomRowEnd = (int)room->GetCenterPosition().GetRow() + room->GetHeight() / 2;
 	int roomColumnStart = (int)fabs(room->GetCenterPosition().GetColumn() - room->GetWidth() / 2);
 	int roomColumnEnd = (int)room->GetCenterPosition().GetColumn() + room->GetWidth() / 2;
-	int ammosCount = rand() % MAX_ARMS, medsCount = rand() % MAX_MEDS_IN_ROOM;
+	int ammosCount = rand() % ARMS, medsCount = rand() % MAX_MEDS_IN_ROOM;
 	int row, column;
 
 	// Fills the room with ammo
@@ -649,27 +649,27 @@ void InitGame()
 	} while (redTeamSpawnRoom == blueTeamSpawnRoom);
 
 	// Initiates 4 Attackers (2 on each team)
-	for (int i = 0; i < 2 * MAX_ATTACKERS_IN_TEAM; i++)
+	for (int i = 0; i < 2 * ATTACKERS_IN_TEAM; i++)
 	{
-		spawnLocation = RandomizeNPCSpawn(i < MAX_ATTACKERS_IN_TEAM ? &rooms[redTeamSpawnRoom] : &rooms[blueTeamSpawnRoom],
-			i < MAX_ATTACKERS_IN_TEAM ? RED_TEAM : BLUE_TEAM);
+		spawnLocation = RandomizeNPCSpawn(i < ATTACKERS_IN_TEAM ? &rooms[redTeamSpawnRoom] : &rooms[blueTeamSpawnRoom],
+			i < ATTACKERS_IN_TEAM ? RED_TEAM : BLUE_TEAM);
 
 		attackers[i].SetLocation(spawnLocation);
-		attackers[i].SetTeam(i < MAX_ATTACKERS_IN_TEAM ? RED_TEAM : BLUE_TEAM);
-		attackers[i].SetRoom(i < MAX_ATTACKERS_IN_TEAM ? redTeamSpawnRoom : blueTeamSpawnRoom);
+		attackers[i].SetTeam(i < ATTACKERS_IN_TEAM ? RED_TEAM : BLUE_TEAM);
+		attackers[i].SetRoom(i < ATTACKERS_IN_TEAM ? redTeamSpawnRoom : blueTeamSpawnRoom);
 
 		map[(int)spawnLocation.GetRow()][(int)spawnLocation.GetColumn()] = attackers[i].GetTeam();
 	}
 
 	// Initiates 2 couriers (1 on each team)
-	for (int i = 0; i < 2 * MAX_COURIERS_IN_TEAM; i++)
+	for (int i = 0; i < 2 * COURIERS_IN_TEAM; i++)
 	{
-		spawnLocation = RandomizeNPCSpawn(i < MAX_COURIERS_IN_TEAM ? &rooms[redTeamSpawnRoom] : &rooms[blueTeamSpawnRoom],
-			i < MAX_COURIERS_IN_TEAM ? RED_TEAM : BLUE_TEAM);
+		spawnLocation = RandomizeNPCSpawn(i < COURIERS_IN_TEAM ? &rooms[redTeamSpawnRoom] : &rooms[blueTeamSpawnRoom],
+			i < COURIERS_IN_TEAM ? RED_TEAM : BLUE_TEAM);
 
 		couriers[i].SetLocation(spawnLocation);
-		couriers[i].SetTeam(i < MAX_COURIERS_IN_TEAM ? RED_TEAM : BLUE_TEAM);
-		couriers[i].SetRoom(i < MAX_COURIERS_IN_TEAM ? redTeamSpawnRoom : blueTeamSpawnRoom);
+		couriers[i].SetTeam(i < COURIERS_IN_TEAM ? RED_TEAM : BLUE_TEAM);
+		couriers[i].SetRoom(i < COURIERS_IN_TEAM ? redTeamSpawnRoom : blueTeamSpawnRoom);
 
 		map[(int)spawnLocation.GetRow()][(int)spawnLocation.GetColumn()] = couriers[i].GetTeam();
 	}
@@ -925,7 +925,7 @@ void IterateTeam(int teamColor)
 	int deadTeammates = 0;
 
 	// Iterates team members
-	for (int i = 0; i < 2 * MAX_ATTACKERS_IN_TEAM; i++)
+	for (int i = 0; i < 2 * ATTACKERS_IN_TEAM; i++)
 	{
 		// Validation
 		if (attackers[i].GetTeam() != teamColor)
@@ -937,7 +937,7 @@ void IterateTeam(int teamColor)
 			IterateAttacker(&attackers[i]);
 	}
 
-	for (int i = 0; i < 2 * MAX_COURIERS_IN_TEAM; i++)
+	for (int i = 0; i < 2 * COURIERS_IN_TEAM; i++)
 	{
 		// Validation
 		if (couriers[i].GetTeam() != teamColor)
@@ -950,7 +950,7 @@ void IterateTeam(int teamColor)
 	}
 
 	// Checks whether the entire team is dead (and the game is over)
-	if (deadTeammates == MAX_ATTACKERS_IN_TEAM + MAX_COURIERS_IN_TEAM)
+	if (deadTeammates == TEAM_SIZE)
 	{
 		gameOver = true;
 		winningTeam = teamColor == RED_TEAM ? "Blue" : "Red";

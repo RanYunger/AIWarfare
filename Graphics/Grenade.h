@@ -10,7 +10,7 @@ class Grenade
 private:
 	// Fields
 	Position location, destination;
-	Bullet* shards[MAX_SHARDS_IN_GRENADE];
+	Bullet* shards[SHARDS_IN_GRENADE];
 	int team;
 	double angle, directionRow, directionColumn;
 
