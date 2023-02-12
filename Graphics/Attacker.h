@@ -14,7 +14,7 @@ private:
 	// Fields
 	Bullet* bullet;
 	Grenade* grenade;
-	int steppedOnSupply;
+	int steppedOn;
 	bool isSearchingEnemy, isSearchingShelter, isAttacking;
 
 public:
@@ -25,8 +25,8 @@ public:
 	Grenade* GetGrenade();
 	void SetGrenade(Grenade* g);
 
-	int GetSteppedOnSupply();
-	void SetSteppedOnSupply(int s);
+	int GetSteppedOn();
+	void SetSteppedOn(int s);
 
 	bool IsSearchingEnemy();
 	void SetIsSearchingEnemy(bool i);

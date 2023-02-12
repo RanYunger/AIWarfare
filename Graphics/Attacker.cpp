@@ -13,8 +13,8 @@ void Attacker::SetBullet(Bullet* b) { bullet = b; }
 Grenade* Attacker::GetGrenade() { return grenade; }
 void Attacker::SetGrenade(Grenade* g) { grenade = g; }
 
-int Attacker::GetSteppedOnSupply() { return steppedOnSupply; }
-void Attacker::SetSteppedOnSupply(int s) { steppedOnSupply = s; }
+int Attacker::GetSteppedOn() { return steppedOn; }
+void Attacker::SetSteppedOn(int s) { steppedOn = s; }
 
 bool Attacker::IsSearchingEnemy() { return isSearchingEnemy; }
 void Attacker::SetIsSearchingEnemy(bool i) { isSearchingEnemy = i; }
@@ -31,7 +31,7 @@ Attacker::Attacker()
 {
 	SetBullet(nullptr);
 	SetGrenade(nullptr);
-	SetSteppedOnSupply(SPACE);
+	SetSteppedOn(SPACE);
 	SetIsSearchingEnemy(false);
 	SetIsSearchingShelter(false);
 	SetIsAttacking(false);
@@ -66,7 +66,7 @@ void Attacker::ShootBullet(double angle, int map[MAP_DIMENSION][MAP_DIMENSION], 
 {
 	arms = arms - 1 <= 0 ? 0 : arms - 1;
 
-	bullet = new Bullet(location, team, angle);
+	bullet = new Bullet(location, angle, team);
 }
 
 /// <summary>

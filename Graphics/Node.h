@@ -7,17 +7,17 @@ class Node
 {
 private:
 	// Fields
-	Position sourcePosition, destinationPosition;
+	Position location, destination;
 	Node* parent;
 	double f, g, h;
 
 public:
 	// Properties
-	Position GetSourcePosition();
-	void SetSourcePosition(Position* sp);
+	Position GetLocation();
+	void SetLocation(Position* s);
 
-	Position GetDestinationPosition();
-	void SetDestinationPosition(Position* dp);
+	Position GetDestination();
+	void SetDestination(Position* d);
 
 	Node* GetParent();
 	void SetParent(Node* p);
@@ -33,9 +33,12 @@ public:
 
 	// Constructors & Destructors
 	Node();
-	Node(Position* sp, Position* dp, Node* p, double g);
+	Node(Position* s, Position* d, Node* p, double g);
 	~Node();
 
 	// Methods
-	bool operator == (const Node& other) { return sourcePosition == other.sourcePosition; }
+
+	// Operators
+	bool operator == (const Node& other) { return location == other.location; }
+	bool operator != (const Node& other) { return location != other.location; }
 };

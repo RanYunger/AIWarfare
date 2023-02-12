@@ -1,6 +1,8 @@
 // Includes
 #include "AttackState.h"
 
+#include <stdlib.h>
+#include "SearchEnemyState.h"
 #include "SearchShelterState.h"
 
 // Constructors & Destructors
@@ -15,8 +17,10 @@ AttackState::~AttackState() {}
 /// <param name="npc">The NPC</param>
 void AttackState::Transform(NPC* npc)
 {
+	State* nextState = npc->GetHealth() <= 10 + rand() % (HEALTH_BOOST - 10) ? (State*)new SearchShelterState() : (State*)new SearchEnemyState();
+
 	OnExit(npc);
-	npc->SetActiveState((State*)new SearchShelterState());
+	npc->SetActiveState(nextState);
 	npc->GetActiveState()->OnEnter(npc);
 }
 

@@ -8,11 +8,14 @@
 Position Bullet::GetLocation() { return location; }
 void Bullet::SetLocation(Position l) { location = l; }
 
+double Bullet::GetAngle() { return angle; }
+void Bullet::SetAngle(double a) { angle = a; }
+
 int Bullet::GetTeam() { return team; }
 void Bullet::SetTeam(int t) { team = t; }
 
-double Bullet::GetAngle() { return angle; }
-void Bullet::SetAngle(double a) { angle = a; }
+int Bullet::GetDamage() { return damage; }
+void Bullet::SetDamage(int d) { damage = d; }
 
 double Bullet::GetDirectionRow() { return directionRow; }
 void Bullet::SetDirectionRow(double dR) { directionRow = dR; }
@@ -23,11 +26,12 @@ void Bullet::SetDirectionColumn(double dC) { directionColumn = dC; }
 // Constructors & Destructors
 Bullet::Bullet() {}
 
-Bullet::Bullet(Position l, int t, double a)
+Bullet::Bullet(Position l, double a, int t)
 {
 	SetLocation(l);
-	SetTeam(t);
 	SetAngle(a);
+	SetTeam(t);
+	SetDamage(HEALTH_BOOST);
 	SetDirectionRow(sin(a));
 	SetDirectionColumn(cos(a));
 }
@@ -51,7 +55,9 @@ bool Bullet::Move(int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_
 	column += GetDirectionColumn() * BULLET_STEP;
 	row += GetDirectionRow() * BULLET_STEP;
 	newLocation = new Position(row, column);
-	SetLocation(*newLocation);
+	location = *newLocation;
+
+	damage = damage - 1 <= 0 ? 0 : damage - 1;
 
 	// Updates the security factor at (row, column)
 	securityMap[(int)row][(int)column] += BULLET_SIZE;
