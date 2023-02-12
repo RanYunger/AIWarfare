@@ -4,6 +4,9 @@
 #include "Attacker.h"
 #include "NPC.h"
 
+#include <string>
+using namespace std;
+
 class Attacker;
 
 class Courier : public NPC
@@ -32,6 +35,8 @@ public:
 
 	bool IsCalled();
 	void SetIsCalled(bool i);
+
+	string GetStateName();
 
 	// Constructors & Destructors
 	Courier();

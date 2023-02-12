@@ -12,7 +12,7 @@ class NPC
 protected:
 	// Fields
 	Position location, destination;
-	State* activeState, *interruptedState;
+	State* activeState;
 	int health, team, room, arms, meds;
 
 public:
@@ -25,9 +25,6 @@ public:
 
 	State* GetActiveState();
 	void SetActiveState(State* s);
-
-	State* GetInterruptedState();
-	void SetInterruptedState(State* s);
 
 	int GetHealth();
 	void SetHealth(int h);

@@ -6,6 +6,9 @@
 #include "Grenade.h"
 #include "NPC.h"
 
+#include <string>
+using namespace std;
+
 class Courier;
 
 class Attacker : public NPC
@@ -36,6 +39,8 @@ public:
 
 	bool IsAttacking();
 	void SetIsAttacking(bool i);
+
+	string GetStateName();
 
 	// Constructors & Destructors
 	Attacker();

@@ -1,8 +1,10 @@
 // Includes
 #include "Courier.h"
-
 #include "SearchSupplyState.h"
 #include "Settings.h"
+
+#include <string>
+using namespace std;
 
 // Properties
 int Courier::GetSupply() { return supply; }
@@ -122,4 +124,16 @@ void Courier::TradeSupply(Attacker* ally)
 		else if (supply == MEDS)
 			TakeMeds(ally);
 	}
+}
+
+string Courier::GetStateName()
+{
+	if (isSearchingSupply)
+		return "Searching supply State";
+	if (isSearchingAlly)
+		return "Searching ally State";
+	if (isSharingSupply)
+		return "Sharing supply State";
+
+	return "ERROR - no state detected";
 }

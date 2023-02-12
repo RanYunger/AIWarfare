@@ -6,6 +6,9 @@
 #include "SearchEnemyState.h"
 #include "Settings.h"
 
+#include <string>
+using namespace std;
+
 // Properties
 Bullet* Attacker::GetBullet() { return bullet; }
 void Attacker::SetBullet(Bullet* b) { bullet = b; }
@@ -142,4 +145,16 @@ bool Attacker::IsAllyRequiresSupply(Attacker* attackers, int supply)
 	}
 
 	return false;
+}
+
+string Attacker::GetStateName()
+{
+	if (isSearchingEnemy)
+		return "Searching Enemy State";
+	if (isAttacking)
+		return "Attacking State";
+	if (isSearchingShelter)
+		return "Searching Shelter State";
+
+	return "ERROR - no state detected";
 }

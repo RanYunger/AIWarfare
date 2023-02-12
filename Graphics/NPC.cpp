@@ -13,9 +13,6 @@ void NPC::SetDestination(Position d) { destination = d; }
 State* NPC::GetActiveState() { return activeState; }
 void NPC::SetActiveState(State* s) { activeState = s; }
 
-State* NPC::GetInterruptedState() { return interruptedState; }
-void NPC::SetInterruptedState(State* s) { interruptedState = s; }
-
 int NPC::GetHealth() { return health; }
 void NPC::SetHealth(int h) { health = h; }
 
@@ -37,7 +34,6 @@ NPC::NPC()
 	SetLocation(EMPTY_POSITION);
 	SetDestination(EMPTY_POSITION);
 	SetActiveState(nullptr);
-	SetInterruptedState(nullptr);
 	SetHealth(MAX_HEALTH);
 	SetTeam(-1);
 	SetRoom(-1);
