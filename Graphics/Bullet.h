@@ -1,6 +1,7 @@
 #pragma once
 
 // Includes
+#include "NPC.h"
 #include "Position.h"
 #include "Settings.h"
 
@@ -39,4 +40,7 @@ public:
 
 	// Methods
 	void Move();
+	void Draw();
+
+	bool IsActive(int map[MAP_DIMENSION][MAP_DIMENSION], NPC* enemyTeam);
 };

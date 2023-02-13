@@ -11,12 +11,6 @@
 using namespace std;
 
 // Properties
-Bullet Attacker::GetBullet() { return bullet; }
-void Attacker::SetBullet(Bullet b) { bullet = b; }
-
-Grenade Attacker::GetGrenade() { return grenade; }
-void Attacker::SetGrenade(Grenade g) { grenade = g; }
-
 int Attacker::GetSteppedOn() { return steppedOn; }
 void Attacker::SetSteppedOn(int s) { steppedOn = s; }
 
@@ -59,45 +53,23 @@ void Attacker::CallCourier(Courier* courier, int supply, int transaction)
 }
 
 /// <summary>
-/// Shoots a bullet towards a given destination.
-/// </summary>
-/// <param name="angle">The angle the bullet is shot at</param>
-void Attacker::ShootBullet(double angle)
-{
-	arms = arms - 1 <= 0 ? 0 : arms - 1;
-
-	bullet.SetLocation(location);
-	bullet.SetAngle(angle);
-	bullet.SetTeam(team);
-}
-
-/// <summary>
-/// Throws a grenade towards a given destination.
-/// </summary>
-/// <param name="destination">The position the attack is heading to</param>
-void Attacker::ThrowGrenade(Position destination)
-{
-	arms = arms - 1 <= 0 ? 0 : arms - 1;
-
-	grenade.SetLocation(location);
-	grenade.SetDestination(destination);
-	grenade.SetTeam(team);
-}
-
-/// <summary>
 /// Activates a random attack.
 /// </summary>
 /// <param name="destination">The position the attack is heading to</param>
-void Attacker::Attack(Position destination)
+/// <param name="shotBullet">The shot bullet (if randomized)</param>
+/// <param name="thrownGrenade">The thrown grenade (if randomized)</param>
+void Attacker::Attack(Position destination, Bullet** shotBullet, Grenade** thrownGrenade)
 {
-	double angle = atan2(location.GetRow() - destination.GetRow(), location.GetColumn() - destination.GetColumn()) * (180 / PI);
-	bool isShootingBullet = rand() % 2 == 0;
+	// TODO: FIX (angle calculation)
+	double angle = atan2(fabs(location.GetRow() - destination.GetRow()), fabs(location.GetColumn() - destination.GetColumn())) * (180 / PI);
 
-	if ((isShootingBullet) && (bullet.GetLocation() == EMPTY_POSITION))
-		ShootBullet(angle);
-	
-	if ((!isShootingBullet) && (grenade.GetLocation() == EMPTY_POSITION))
-		ThrowGrenade(destination);
+	// Spawns a random bullet / grenade
+	if (rand() % 2 == 0)
+		*shotBullet = new Bullet(location, angle, team);
+	else
+		*thrownGrenade = new Grenade(location, destination, angle, team);
+
+	arms = arms - 1 <= 0 ? 0 : arms - 1;
 }
 
 /// <summary>

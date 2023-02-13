@@ -58,3 +58,10 @@ void NPC::TakeDamage(int damage)
 		meds = meds - 1 <= 0 ? 0 : meds - 1;
 	}
 }
+
+/// <summary>
+/// Indicates whether the NPC is in a room with another NPC.
+/// </summary>
+/// <param name="other">The other NPC to check proximity with</param>
+/// <returns>True if the two NPCs are in the same room, False otherwise</returns>
+bool NPC::IsInSameRoom(NPC other) { return (room != -1) && (room == other.GetRoom()); }

@@ -15,19 +15,11 @@ class Attacker : public NPC
 {
 private:
 	// Fields
-	Bullet bullet;
-	Grenade grenade;
 	int steppedOn;
 	bool isSearchingEnemy, isSearchingShelter, isAttacking;
 
 public:
 	// Properties
-	Bullet GetBullet();
-	void SetBullet(Bullet b);
-
-	Grenade GetGrenade();
-	void SetGrenade(Grenade g);
-
 	int GetSteppedOn();
 	void SetSteppedOn(int s);
 
@@ -48,10 +40,7 @@ public:
 
 	// Methods
 	void CallCourier(Courier* courier, int supply, int transaction);
-
-	void ShootBullet(double angle);
-	void ThrowGrenade(Position destination);
-	void Attack(Position destination);
+	void Attack(Position destination, Bullet** shotBullet, Grenade** thrownGrenade);
 
 	bool HasLineOfSight(NPC npc, int map[MAP_DIMENSION][MAP_DIMENSION]);
 	bool IsAllyRequiresSupply(Attacker* attackers, int supply);

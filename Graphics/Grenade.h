@@ -35,9 +35,12 @@ public:
 
 	// Consturctors & Destructors
 	Grenade();
-	Grenade(Position l, Position d, int t);
+	Grenade(Position l, Position d, double a, int t);
 	~Grenade();
 
 	// Methods
 	void Move();
+	void Draw();
+
+	bool IsActive(int map[MAP_DIMENSION][MAP_DIMENSION], NPC* enemyTeam);
 };
