@@ -10,7 +10,6 @@ class Grenade
 private:
 	// Fields
 	Position location, destination;
-	Bullet* shards[SHARDS_IN_GRENADE];
 	int team;
 	double angle, directionRow, directionColumn;
 
@@ -21,8 +20,6 @@ public:
 
 	Position GetDestination();
 	void SetDestination(Position d);
-
-	Bullet** GetShards();
 
 	int GetTeam();
 	void SetTeam(int t);
@@ -42,8 +39,5 @@ public:
 	~Grenade();
 
 	// Methods
-	void InitShards();
-
-	bool Move(int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_DIMENSION][MAP_DIMENSION]);
-	void Draw();
+	void Move();
 };

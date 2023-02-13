@@ -2,7 +2,6 @@
 #include "Bullet.h"
 
 #include <math.h>
-#include "glut.h"
 
 // Properties
 Position Bullet::GetLocation() { return location; }
@@ -24,7 +23,15 @@ double Bullet::GetDirectionColumn() { return directionColumn; }
 void Bullet::SetDirectionColumn(double dC) { directionColumn = dC; }
 
 // Constructors & Destructors
-Bullet::Bullet() {}
+Bullet::Bullet()
+{
+	SetLocation(EMPTY_POSITION);
+	SetAngle(0);
+	SetTeam(-1);
+	SetDamage(0);
+	SetDirectionRow(0);
+	SetDirectionColumn(0);
+}
 
 Bullet::Bullet(Position l, double a, int t)
 {
@@ -36,48 +43,16 @@ Bullet::Bullet(Position l, double a, int t)
 	SetDirectionColumn(cos(a));
 }
 
+Bullet::~Bullet() {}
+
 /// <summary>
-/// Indicates whether the bullet can move.
+/// Moves the bullet.
 /// </summary>
-/// <param name="map">The map to draw the bullet upon</param>
-/// <param name="securityMap">The security map to simulate the grenade at</param>
-/// <returns>True if the bullet can move, False otherwise</returns>
-bool Bullet::Move(int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_DIMENSION][MAP_DIMENSION])
+void Bullet::Move()
 {
-	double row = location.GetRow(), column = location.GetColumn();
-	Position* newLocation;
-
-	// Validation
-	if (map[(int)row][(int)column] == WALL)
-		return false;
-
 	// Moves the bullet by BULLET_STEP to direction (directionColumn, directionRow) on the map
-	column += GetDirectionColumn() * BULLET_STEP;
-	row += GetDirectionRow() * BULLET_STEP;
-	newLocation = new Position(row, column);
-	location = *newLocation;
+	location.SetRow(location.GetRow() + GetDirectionRow() * BULLET_STEP);
+	location.SetColumn(location.GetColumn() + GetDirectionColumn() * BULLET_STEP);
 
 	damage = damage - 1 <= 0 ? 0 : damage - 1;
-
-	// Updates the security factor at (row, column)
-	securityMap[(int)row][(int)column] += BULLET_SIZE;
-
-	return true;
-}
-
-/// <summary>
-/// Draws the bullet.
-/// </summary>
-void Bullet::Draw()
-{
-	int row = (int)location.GetRow(), column = (int)location.GetColumn();
-	double delta = 0.5;
-
-	glColor3d(0.75, 0.75, 0.75); // Silver
-	glBegin(GL_POLYGON);
-	glVertex2d(column - delta, row);
-	glVertex2d(column, row + delta);
-	glVertex2d(column + delta, row);
-	glVertex2d(column, row - delta);
-	glEnd();
 }

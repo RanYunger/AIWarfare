@@ -1,6 +1,7 @@
 // Includes
 #include "Attacker.h"
 
+#include <vector>
 #include <math.h>
 #include <stdlib.h>
 #include "SearchEnemyState.h"
@@ -10,11 +11,11 @@
 using namespace std;
 
 // Properties
-Bullet* Attacker::GetBullet() { return bullet; }
-void Attacker::SetBullet(Bullet* b) { bullet = b; }
+Bullet Attacker::GetBullet() { return bullet; }
+void Attacker::SetBullet(Bullet b) { bullet = b; }
 
-Grenade* Attacker::GetGrenade() { return grenade; }
-void Attacker::SetGrenade(Grenade* g) { grenade = g; }
+Grenade Attacker::GetGrenade() { return grenade; }
+void Attacker::SetGrenade(Grenade g) { grenade = g; }
 
 int Attacker::GetSteppedOn() { return steppedOn; }
 void Attacker::SetSteppedOn(int s) { steppedOn = s; }
@@ -32,8 +33,6 @@ void Attacker::SetIsAttacking(bool i) { isAttacking = i; }
 Attacker::Attacker()
 	: NPC()
 {
-	SetBullet(nullptr);
-	SetGrenade(nullptr);
 	SetSteppedOn(SPACE);
 	SetIsSearchingEnemy(false);
 	SetIsSearchingShelter(false);
@@ -63,44 +62,42 @@ void Attacker::CallCourier(Courier* courier, int supply, int transaction)
 /// Shoots a bullet towards a given destination.
 /// </summary>
 /// <param name="angle">The angle the bullet is shot at</param>
-/// <param name="map">The map to simulate the grenade at</param>
-/// <param name="securityMap">The security map to simulate the bullet at</param>
-void Attacker::ShootBullet(double angle, int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_DIMENSION][MAP_DIMENSION])
+void Attacker::ShootBullet(double angle)
 {
 	arms = arms - 1 <= 0 ? 0 : arms - 1;
 
-	bullet = new Bullet(location, angle, team);
+	bullet.SetLocation(location);
+	bullet.SetAngle(angle);
+	bullet.SetTeam(team);
 }
 
 /// <summary>
 /// Throws a grenade towards a given destination.
 /// </summary>
 /// <param name="destination">The position the attack is heading to</param>
-/// <param name="map">The map to simulate the grenade at</param>
-/// <param name="securityMap">The security map to simulate the bullet at</param>
-void Attacker::ThrowGranade(Position destination, int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_DIMENSION][MAP_DIMENSION])
+void Attacker::ThrowGrenade(Position destination)
 {
 	arms = arms - 1 <= 0 ? 0 : arms - 1;
 
-	grenade = new Grenade(location, destination, team);
+	grenade.SetLocation(location);
+	grenade.SetDestination(destination);
+	grenade.SetTeam(team);
 }
 
 /// <summary>
 /// Activates a random attack.
 /// </summary>
 /// <param name="destination">The position the attack is heading to</param>
-/// <param name="map">The map to simulate the grenade at</param>
-/// <param name="securityMap">The security map to simulate the bullet at</param>
-void Attacker::Attack(Position destination, int map[MAP_DIMENSION][MAP_DIMENSION], double securityMap[MAP_DIMENSION][MAP_DIMENSION])
+void Attacker::Attack(Position destination)
 {
-	double dRow = destination.GetRow() - location.GetRow(), dColumn = destination.GetColumn() - location.GetColumn();
-	double angle = atan(dRow / dColumn);
+	double angle = atan2(location.GetRow() - destination.GetRow(), location.GetColumn() - destination.GetColumn()) * (180 / PI);
 	bool isShootingBullet = rand() % 2 == 0;
 
-	if ((isShootingBullet) && (bullet == nullptr))
-		ShootBullet(angle, map, securityMap);
-	else if ((!isShootingBullet) && (grenade == nullptr))
-		ThrowGranade(destination, map, securityMap);
+	if ((isShootingBullet) && (bullet.GetLocation() == EMPTY_POSITION))
+		ShootBullet(angle);
+	
+	if ((!isShootingBullet) && (grenade.GetLocation() == EMPTY_POSITION))
+		ThrowGrenade(destination);
 }
 
 /// <summary>

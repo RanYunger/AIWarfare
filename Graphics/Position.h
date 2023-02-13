@@ -28,4 +28,5 @@ public:
 	bool operator == (const Position& other) { return (row == other.row) && (column == other.column); }
 	bool operator != (const Position& other) { return (row != other.row) || (column != other.column); }
 	bool operator | (const Position& other) { return fabs(row - other.row) + fabs(column - other.column) == 1; } // "neighbor" positions
+	bool operator ^ (const Position& other) { return fabs(row - other.row) + fabs(column - other.column) < 1; } // "tangent" positions
 };
