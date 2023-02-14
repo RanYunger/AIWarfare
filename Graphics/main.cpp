@@ -168,6 +168,22 @@ Position FindNextLocation(NPC* npc)
 }
 
 /// <summary>
+/// Finds an attacker by its location.
+/// </summary>
+/// <param name="attackerLocation">The requested attacker's location</param>
+/// <returns>The Attacker in the given location (if there's one), Nullptr otherwise</returns>
+Attacker* FindAttackerByLocation(Position attackerLocation)
+{
+	Position currentLocation;
+
+	for (int i = 0; i < ATTACKERS_IN_TEAM; i++)
+		if (attackers[i].GetLocation() == attackerLocation)
+			return &attackers[i];
+
+	return nullptr;
+}
+
+/// <summary>
 /// Finds the attackers by their team.
 /// </summary>
 /// <param name="teamColor">The attackers' team</param>
@@ -207,9 +223,10 @@ NPC** FindTeamByColor(int teamColor)
 	Attacker** teamAttackers = FindAttackersByColor(teamColor);
 	Attacker* currentAttacker = *teamAttackers;
 	Courier* teamCourier = FindCourierByColor(teamColor);
-	NPC* team[TEAM_SIZE] = { nullptr, nullptr, teamCourier };
+	NPC* team[TEAM_SIZE];
 
-	for (int i = 0; i < ATTACKERS_IN_TEAM; i++)
+	team[0] = teamCourier;
+	for (int i = 1; i < TEAM_SIZE; i++)
 		team[i] = currentAttacker++;
 
 	return team;
@@ -342,17 +359,23 @@ Position FindNearestShelter(NPC* npc)
 }
 
 /// <summary>
-/// Indicates whether a weaponry (bullet / grenade) is still active
+/// Indicates whether a weaponry (bullet / grenade) is still active.
 /// </summary>
 /// <param name="weaponLocation">The weapon's location</param>
 /// <param name="enemyTeam">The weapon's possible targets</param>
 /// <returns>True if the weapon is still active, False otherwise</returns>
-bool IsWeaponActive(Position weaponLocation, NPC* enemyTeam)
+bool IsWeaponActive(Bullet* bullet, Grenade* grenade, NPC* enemyTeam)
 {
+	Position weaponLocation;
 	NPC* currentEnemy = enemyTeam;
 	Position enemyLocation;
 
-	// Checks if the grenade hits a wall
+	if (bullet != nullptr)
+		weaponLocation = bullet->GetLocation();
+	else
+		weaponLocation = grenade->GetLocation();
+
+	// Checks if the weapon hits a wall
 	if (map[(int)(weaponLocation.GetRow() - WEAPON_SIZE)][(int)weaponLocation.GetColumn()] == WALL)
 		return false;
 	if (map[(int)(weaponLocation.GetRow() + WEAPON_SIZE)][(int)weaponLocation.GetColumn()] == WALL)
@@ -362,15 +385,33 @@ bool IsWeaponActive(Position weaponLocation, NPC* enemyTeam)
 	if (map[(int)weaponLocation.GetRow()][(int)(weaponLocation.GetColumn() + WEAPON_SIZE)] == WALL)
 		return false;
 
-	// Checks if the grenade hits an enemy
+	// Checks if the weapon hits an enemy
 	for (int i = 0; i < TEAM_SIZE; i++, currentEnemy++)
 	{
+		// Validation
+		if (currentEnemy->GetHealth() <= 0)
+			continue;
+
 		enemyLocation = currentEnemy->GetLocation();
 
 		if (fabs(weaponLocation.GetRow() - enemyLocation.GetRow()) <= WEAPON_SIZE)
+		{
+			if (bullet != nullptr)
+				currentEnemy->TakeDamage(bullet->GetDamage());
+			else if (grenade != nullptr)
+				currentEnemy->TakeDamage(MAX_HEALTH);
+
 			return false;
+		}
 		if (fabs(weaponLocation.GetColumn() - enemyLocation.GetColumn()) <= WEAPON_SIZE)
+		{
+			if (bullet != nullptr)
+				currentEnemy->TakeDamage(bullet->GetDamage());
+			else if (grenade != nullptr)
+				currentEnemy->TakeDamage(MAX_HEALTH);
+
 			return false;
+		}
 	}
 
 	return true;
@@ -385,7 +426,7 @@ void CheckBulletHit(Bullet* bullet)
 	NPC** enemyTeam = FindTeamByColor(bullet->GetTeam() == RED_TEAM ? BLUE_TEAM : RED_TEAM);
 
 	// Checks if the bullet hits a wall
-	if (!IsWeaponActive(bullet->GetLocation(), *enemyTeam))
+	if (!IsWeaponActive(bullet, nullptr, *enemyTeam))
 		for (vector<Bullet*>::iterator bulletsIterator = bullets.begin(); bulletsIterator != bullets.end(); bulletsIterator++)
 			if ((*bulletsIterator)->GetLocation() == bullet->GetLocation())
 			{
@@ -404,7 +445,7 @@ void CheckGrenadeHit(Grenade* grenade)
 	double alpha = 0, teta = (360.0 / SHARDS_IN_GRENADE) * (180 / PI);
 
 	// TODO: FIX (not all shards are spawned in)
-	if (!IsWeaponActive(grenade->GetLocation(), *enemyTeam))
+	if (!IsWeaponActive(nullptr, grenade, *enemyTeam))
 	{
 		// Explodes the grenade and turns to manage its shards
 		for (int i = 0; i < SHARDS_IN_GRENADE; i++, alpha += teta)
@@ -744,10 +785,10 @@ void InitRooms()
 	{
 		do
 		{
-			centerRow = EDGE_OFFSET + rand() % (MAP_DIMENSION - 35);
-			centerColumn = EDGE_OFFSET + rand() % (MAP_DIMENSION - 35);
-			height = EDGE_OFFSET + rand() % 25;
-			width = EDGE_OFFSET + rand() % 25;
+			centerRow = EDGE_OFFSET + rand() % (MAP_DIMENSION - (4 * EDGE_OFFSET));
+			centerColumn = EDGE_OFFSET + rand() % (MAP_DIMENSION - (4 * EDGE_OFFSET));
+			height = EDGE_OFFSET + rand() % ROOM_HEIGHT;
+			width = EDGE_OFFSET + rand() % ROOM_WIDTH;
 		} while (IsRoomOverlapping(centerRow, centerColumn, height, width));
 
 		centerPosition.SetRow(centerRow);
@@ -917,10 +958,24 @@ void MoveAttacker(Attacker* attacker, Position newLocation)
 	Position oldLocation = attacker->GetLocation();
 	int oldRow = (int)oldLocation.GetRow(), oldColumn = (int)oldLocation.GetColumn();
 	int newRow = (int)newLocation.GetRow(), newColumn = (int)newLocation.GetColumn();
-	int steppedOn = attacker->GetSteppedOn() == attacker->GetTeam() ? SPACE : attacker->GetSteppedOn();
+	Attacker* otherAttacker;
+
+	// Validation (TODO: FIX)
+	if ((map[newRow][newColumn] == RED_TEAM) || (map[newRow][newColumn] == BLUE_TEAM))
+	{
+		otherAttacker = FindAttackerByLocation(newLocation);
+
+		if (otherAttacker == nullptr)
+		{
+			cout << "Error in 'MoveAttacker' function (line 956)\n";
+			exit(1);
+		}
+		else
+			attacker->SetSteppedOn(otherAttacker->GetSteppedOn());
+	}
 
 	// Moves color-wise
-	map[oldRow][oldColumn] = steppedOn;
+	map[oldRow][oldColumn] = attacker->GetSteppedOn();
 	attacker->SetSteppedOn(map[newRow][newColumn]);
 	map[newRow][newColumn] = attacker->GetTeam();
 
@@ -939,6 +994,10 @@ void MoveCourier(Courier* courier, Position newLocation)
 	Position oldLocation = courier->GetLocation();
 	int oldRow = (int)oldLocation.GetRow(), oldColumn = (int)oldLocation.GetColumn();
 	int newRow = (int)newLocation.GetRow(), newColumn = (int)newLocation.GetColumn();
+
+	// Validation
+	if ((map[newRow][newColumn] == RED_TEAM) || (map[newRow][newColumn] == BLUE_TEAM))
+		return;
 
 	// Collects supply (if there's one)
 	if ((map[newRow][newColumn] == ARMS) || (map[newRow][newColumn] == MEDS))
@@ -1030,14 +1089,19 @@ void IterateCourier(Courier* courier)
 	{
 		courier->SetDestination(FindNearestSupply(*courier));
 
-		if (courier->IsCalled())
-			courier->GetActiveState()->Transform(courier); // SearchSupplyState -> SearchAllyState
+		if (courier->IsCalled()) // If the courier is being called for action
+		{
+			if ((courier->GetSupply() == ARMS) && (courier->GetArms() > 0)) // If I'm called for arms and I have arms to give
+				courier->GetActiveState()->Transform(courier);
+			else if ((courier->GetSupply() == MEDS) && (courier->GetMeds() > 0)) // If I'm called for meds and I have meds to give
+				courier->GetActiveState()->Transform(courier); // SearchSupplyState -> SearchAllyState		
+		}
 	}
 	else if (courier->IsSearchingAlly())
 	{
 		courier->SetDestination(nearestAlly->GetLocation());
 
-		if (courier->GetLocation() | nearestAlly->GetLocation())
+		if ((courier->GetLocation() == nearestAlly->GetLocation()) || (courier->GetLocation() | nearestAlly->GetLocation()))
 			courier->GetActiveState()->Transform(courier); // SearchAllyState -> ShareSupplyState
 	}
 	else if (courier->IsSharingSupply())
@@ -1104,29 +1168,6 @@ void IterateTeam(int teamColor)
 	}
 }
 
-/// <summary>
-/// Iterates the game.
-/// </summary>
-void IterateGame()
-{
-	// Iterates both teams
-	if (!gameOver)
-	{
-		system("CLS"); // Clears the console
-		IterateTeam(RED_TEAM);
-	}
-
-	Sleep(100);
-
-	//if (!gameOver)
-	//{
-	//	system("CLS"); // Clears the console
-	//	IterateTeam(BLUE_TEAM);
-	//}
-
-	//Sleep(100);
-}
-
 // Default Methods
 
 void CreateMenu(int choice)
@@ -1153,31 +1194,51 @@ void display()
 	DrawMap();
 
 	for (int i = 0; i < bullets.size(); i++)
-	{
-		bullets[i]->Move();
 		bullets[i]->Draw();
+
+	for (int i = 0; i < grenades.size(); i++)
+		grenades[i]->Draw();
+
+	glutSwapBuffers(); // show all
+}
+void idle()
+{
+	Position weaponLocation;
+
+	if (restart)
+		Restart();
+	else if (gameOver)
+		return;
+
+	system("CLS"); // Clears the console
+
+	// Iterates both teams
+	if (!gameOver)
+		IterateTeam(RED_TEAM);
+
+	if (!gameOver)
+		IterateTeam(BLUE_TEAM);
+
+	// Iterates spawned weaponry
+	for (int i = 0; i < bullets.size(); i++)
+	{
+		weaponLocation = bullets[i]->GetLocation();
+
+		bullets[i]->Move();
+		securityMap[(int)weaponLocation.GetRow()][(int)weaponLocation.GetColumn()] += BULLET_SECURITY_WEIGHT;
 
 		CheckBulletHit(bullets[i]);
 	}
 
 	for (int i = 0; i < grenades.size(); i++)
 	{
+		weaponLocation = grenades[i]->GetLocation();
+
 		grenades[i]->Move();
-		grenades[i]->Draw();
+		securityMap[(int)weaponLocation.GetRow()][(int)weaponLocation.GetColumn()] += GRENADE_SECURITY_WEIGHT;
 
 		CheckGrenadeHit(grenades[i]);
 	}
-
-	glutSwapBuffers(); // show all
-}
-void idle()
-{
-	if (restart)
-		Restart();
-	else if (gameOver)
-		return;
-	else
-		IterateGame();
 
 	glutPostRedisplay(); // indirect call to display
 }

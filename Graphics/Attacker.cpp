@@ -61,7 +61,7 @@ void Attacker::CallCourier(Courier* courier, int supply, int transaction)
 void Attacker::Attack(Position destination, Bullet** shotBullet, Grenade** thrownGrenade)
 {
 	// TODO: FIX (angle calculation)
-	double angle = atan2(fabs(location.GetRow() - destination.GetRow()), fabs(location.GetColumn() - destination.GetColumn())) * (180 / PI);
+	double angle = atan2(fabs(location.GetColumn() - destination.GetColumn()), fabs(location.GetRow() - destination.GetRow())) * (180 / PI);
 	//(rand() % 360)* PI / 180.0
 
 	// Spawns a random bullet / grenade
