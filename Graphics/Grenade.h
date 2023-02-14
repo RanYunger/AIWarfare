@@ -41,6 +41,4 @@ public:
 	// Methods
 	void Move();
 	void Draw();
-
-	bool IsActive(int map[MAP_DIMENSION][MAP_DIMENSION], NPC* enemyTeam);
 };

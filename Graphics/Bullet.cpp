@@ -53,8 +53,8 @@ Bullet::~Bullet() {}
 void Bullet::Move()
 {
 	// Moves the bullet by BULLET_STEP to direction (directionColumn, directionRow) on the map
-	location.SetRow(location.GetRow() + GetDirectionRow() * BULLET_STEP);
-	location.SetColumn(location.GetColumn() + GetDirectionColumn() * BULLET_STEP);
+	location.SetRow(location.GetRow() + GetDirectionRow() * WEAPON_STEP);
+	location.SetColumn(location.GetColumn() + GetDirectionColumn() * WEAPON_STEP);
 
 	damage = damage - 1 <= 0 ? 0 : damage - 1;
 }
@@ -65,48 +65,12 @@ void Bullet::Move()
 void Bullet::Draw()
 {
 	double row = location.GetRow(), column = location.GetColumn();
-	double delta = 0.5;
 
 	glColor3d(0.75, 0.75, 0.75); // Silver
 	glBegin(GL_POLYGON);
-	glVertex2d(column - delta, row);
-	glVertex2d(column, row + delta);
-	glVertex2d(column + delta, row);
-	glVertex2d(column, row - delta);
+	glVertex2d(column - WEAPON_SIZE, row);
+	glVertex2d(column, row + WEAPON_SIZE);
+	glVertex2d(column + WEAPON_SIZE, row);
+	glVertex2d(column, row - WEAPON_SIZE);
 	glEnd();
-}
-
-/// <summary>
-/// Indicates whether the bullet is still active
-/// </summary>
-/// <param name="map">The map the bullet is drawn on</param>
-/// <param name="enemyTeam">The bullet's possible targets</param>
-/// <returns>True if the bullet is still active, False otherwise</returns>
-bool Bullet::IsActive(int map[MAP_DIMENSION][MAP_DIMENSION], NPC* enemyTeam)
-{
-	NPC* currentEnemy = enemyTeam;
-	Position enemyLocation;
-
-	// Checks if the grenade hits a wall
-	if (map[(int)(location.GetRow() - BULLET_SIZE)][(int)location.GetColumn()] == WALL)
-		return false;
-	if (map[(int)(location.GetRow() + BULLET_SIZE)][(int)location.GetColumn()] == WALL)
-		return false;
-	if (map[(int)location.GetRow()][(int)(location.GetColumn() - BULLET_SIZE)] == WALL)
-		return false;
-	if (map[(int)location.GetRow()][(int)(location.GetColumn() + BULLET_SIZE)] == WALL)
-		return false;
-
-	// Checks if the grenade hits an enemy
-	for (int i = 0; i < TEAM_SIZE; i++, currentEnemy++)
-	{
-		enemyLocation = currentEnemy->GetLocation();
-
-		if (fabs(location.GetRow() - enemyLocation.GetRow()) <= BULLET_SIZE)
-			return false;
-		if (fabs(location.GetColumn() - enemyLocation.GetColumn()) <= BULLET_SIZE)
-			return false;
-	}
-
-	return true;
 }

@@ -342,6 +342,41 @@ Position FindNearestShelter(NPC* npc)
 }
 
 /// <summary>
+/// Indicates whether a weaponry (bullet / grenade) is still active
+/// </summary>
+/// <param name="weaponLocation">The weapon's location</param>
+/// <param name="enemyTeam">The weapon's possible targets</param>
+/// <returns>True if the weapon is still active, False otherwise</returns>
+bool IsWeaponActive(Position weaponLocation, NPC* enemyTeam)
+{
+	NPC* currentEnemy = enemyTeam;
+	Position enemyLocation;
+
+	// Checks if the grenade hits a wall
+	if (map[(int)(weaponLocation.GetRow() - WEAPON_SIZE)][(int)weaponLocation.GetColumn()] == WALL)
+		return false;
+	if (map[(int)(weaponLocation.GetRow() + WEAPON_SIZE)][(int)weaponLocation.GetColumn()] == WALL)
+		return false;
+	if (map[(int)weaponLocation.GetRow()][(int)(weaponLocation.GetColumn() - WEAPON_SIZE)] == WALL)
+		return false;
+	if (map[(int)weaponLocation.GetRow()][(int)(weaponLocation.GetColumn() + WEAPON_SIZE)] == WALL)
+		return false;
+
+	// Checks if the grenade hits an enemy
+	for (int i = 0; i < TEAM_SIZE; i++, currentEnemy++)
+	{
+		enemyLocation = currentEnemy->GetLocation();
+
+		if (fabs(weaponLocation.GetRow() - enemyLocation.GetRow()) <= WEAPON_SIZE)
+			return false;
+		if (fabs(weaponLocation.GetColumn() - enemyLocation.GetColumn()) <= WEAPON_SIZE)
+			return false;
+	}
+
+	return true;
+}
+
+/// <summary>
 /// Checks whether a bullet hit an enemy.
 /// </summary>
 /// <param name="bullet">The bullet to handle</param>
@@ -350,7 +385,7 @@ void CheckBulletHit(Bullet* bullet)
 	NPC** enemyTeam = FindTeamByColor(bullet->GetTeam() == RED_TEAM ? BLUE_TEAM : RED_TEAM);
 
 	// Checks if the bullet hits a wall
-	if (!bullet->IsActive(map, *enemyTeam))
+	if (!IsWeaponActive(bullet->GetLocation(), *enemyTeam))
 		for (vector<Bullet*>::iterator bulletsIterator = bullets.begin(); bulletsIterator != bullets.end(); bulletsIterator++)
 			if ((*bulletsIterator)->GetLocation() == bullet->GetLocation())
 			{
@@ -369,7 +404,7 @@ void CheckGrenadeHit(Grenade* grenade)
 	double alpha = 0, teta = (360.0 / SHARDS_IN_GRENADE) * (180 / PI);
 
 	// TODO: FIX (not all shards are spawned in)
-	if (!grenade->IsActive(map, *enemyTeam))
+	if (!IsWeaponActive(grenade->GetLocation(), *enemyTeam))
 	{
 		// Explodes the grenade and turns to manage its shards
 		for (int i = 0; i < SHARDS_IN_GRENADE; i++, alpha += teta)

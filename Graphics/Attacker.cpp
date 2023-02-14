@@ -62,6 +62,7 @@ void Attacker::Attack(Position destination, Bullet** shotBullet, Grenade** throw
 {
 	// TODO: FIX (angle calculation)
 	double angle = atan2(fabs(location.GetRow() - destination.GetRow()), fabs(location.GetColumn() - destination.GetColumn())) * (180 / PI);
+	//(rand() % 360)* PI / 180.0
 
 	// Spawns a random bullet / grenade
 	if (rand() % 2 == 0)
