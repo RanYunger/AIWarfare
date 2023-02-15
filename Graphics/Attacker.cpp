@@ -53,24 +53,17 @@ void Attacker::CallCourier(Courier* courier, int supply, int transaction)
 }
 
 /// <summary>
-/// Activates a random attack.
+/// Activates a random weapon.
 /// </summary>
 /// <param name="destination">The position the attack is heading to</param>
-/// <param name="shotBullet">The shot bullet (if randomized)</param>
-/// <param name="thrownGrenade">The thrown grenade (if randomized)</param>
-void Attacker::Attack(Position destination, Bullet** shotBullet, Grenade** thrownGrenade)
+/// <returns>The spawned weapon</returns>
+Weapon* Attacker::Attack(Position destination)
 {
-	// TODO: FIX (angle calculation)
 	double angle = atan2(fabs(location.GetColumn() - destination.GetColumn()), fabs(location.GetRow() - destination.GetRow())) * (180 / PI);
-	//(rand() % 360)* PI / 180.0
-
-	// Spawns a random bullet / grenade
-	if (rand() % 2 == 0)
-		*shotBullet = new Bullet(location, angle, team);
-	else
-		*thrownGrenade = new Grenade(location, destination, angle, team);
 
 	arms = arms - 1 <= 0 ? 0 : arms - 1;
+
+	return new Weapon(location, angle, team, rand() % 2 == 0);
 }
 
 /// <summary>

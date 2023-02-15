@@ -24,10 +24,7 @@
     <ClCompile Include="Node.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Bullet.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Grenade.cpp">
+    <ClCompile Include="Weapon.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="NPC.cpp">
@@ -74,13 +71,10 @@
     <ClInclude Include="Node.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Bullet.h">
+    <ClInclude Include="Weapon.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Settings.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Grenade.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="NPC.h">

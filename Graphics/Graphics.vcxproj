@@ -119,9 +119,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AttackState.cpp" />
-    <ClCompile Include="Bullet.cpp" />
+    <ClCompile Include="Weapon.cpp" />
     <ClCompile Include="Courier.cpp" />
-    <ClCompile Include="Grenade.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Node.cpp" />
     <ClCompile Include="NodesComparator.cpp" />
@@ -138,9 +137,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AttackState.h" />
-    <ClInclude Include="Bullet.h" />
+    <ClInclude Include="Weapon.h" />
     <ClInclude Include="Courier.h" />
-    <ClInclude Include="Grenade.h" />
     <ClInclude Include="Node.h" />
     <ClInclude Include="NodesComparator.h" />
     <ClInclude Include="NPC.h" />

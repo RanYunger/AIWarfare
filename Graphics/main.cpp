@@ -8,9 +8,8 @@
 #include <string>
 #include "glut.h"
 #include "Attacker.h"
-#include "Bullet.h"
+#include "Weapon.h"
 #include "Courier.h"
-#include "Grenade.h"
 #include "NPC.h"
 #include "Node.h"
 #include "NodesComparator.h"
@@ -29,8 +28,7 @@ Attacker attackers[2 * ATTACKERS_IN_TEAM];
 Courier couriers[2 * COURIERS_IN_TEAM];
 
 vector<Position*> supplies;
-vector<Bullet*> bullets;
-vector<Grenade*> grenades;
+vector<Weapon*> weapons;
 vector<Node*> greyNodes, blackNodes;
 
 // Methods
@@ -368,23 +366,41 @@ Position FindNearestShelter(NPC* npc)
 }
 
 /// <summary>
+/// Explodes a combustable weapon (grenade).
+/// </summary>
+/// <param name="grenade">The grenade to explode</param>
+void ExplodeGrenade(Weapon* grenade)
+{
+	double alpha = 0, teta = (360.0 / SHARDS_IN_GRENADE) * PI / 180;
+	double dRow, dColumn;
+	Position shardLocation;
+
+	// Creates shards at the grenade's proximity
+	for (int i = 0; i < SHARDS_IN_GRENADE; i++, alpha += teta)
+	{
+		shardLocation = grenade->GetLocation();
+		dRow = (rand() % 2 == 0 ? 1 : -1) * WEAPON_STEP;
+		dColumn = (rand() % 2 == 0 ? 1 : -1) * WEAPON_STEP;
+
+		shardLocation.SetRow(shardLocation.GetRow() + dRow);
+		shardLocation.SetColumn(shardLocation.GetColumn() + dColumn);
+
+		weapons.push_back(new Weapon(shardLocation, alpha, grenade->GetTeam(), false));
+	}
+}
+
+/// <summary>
 /// Indicates whether a weaponry (bullet / grenade) is still active.
 /// </summary>
 /// <param name="weaponLocation">The weapon's location</param>
 /// <returns>True if the weapon is still active, False otherwise</returns>
-bool IsWeaponActive(Bullet* bullet, Grenade* grenade)
+bool IsWeaponActive(Weapon* weapon)
 {
-	Position weaponLocation, enemyLocation;
+	Position weaponLocation = weapon->GetLocation(), enemyLocation;
 	NPC** enemyTeam;
 	NPC* currentEnemy;
 
-	// Validation
-	if ((bullet == nullptr) && (grenade == nullptr))
-		return false;
-
 	// Checks if the weapon hits a wall
-	weaponLocation = bullet != nullptr ? bullet->GetLocation() : grenade->GetLocation(); // The one that isn't null (must be one null)
-
 	if (map[(int)(weaponLocation.GetRow() - WEAPON_SIZE)][(int)weaponLocation.GetColumn()] == WALL)
 		return false;
 	if (map[(int)(weaponLocation.GetRow() + WEAPON_SIZE)][(int)weaponLocation.GetColumn()] == WALL)
@@ -395,10 +411,7 @@ bool IsWeaponActive(Bullet* bullet, Grenade* grenade)
 		return false;
 
 	// Checks if the weapon hits an enemy
-	if (bullet != nullptr)
-		enemyTeam = FindTeamByColor(bullet->GetTeam() == RED_TEAM ? BLUE_TEAM : RED_TEAM);
-	else
-		enemyTeam = FindTeamByColor(grenade->GetTeam() == RED_TEAM ? BLUE_TEAM : RED_TEAM);
+	enemyTeam = FindTeamByColor(weapon->GetTeam() == RED_TEAM ? BLUE_TEAM : RED_TEAM);
 	currentEnemy = *enemyTeam;
 
 	for (int i = 0; i < TEAM_SIZE; i++, currentEnemy++)
@@ -422,10 +435,7 @@ bool IsWeaponActive(Bullet* bullet, Grenade* grenade)
 		if ((fabs(weaponLocation.GetRow() - enemyLocation.GetRow()) <= WEAPON_SIZE)
 			&& (fabs(weaponLocation.GetColumn() - enemyLocation.GetColumn()) <= WEAPON_SIZE))
 		{
-			if (bullet != nullptr)
-				currentEnemy->TakeDamage(bullet->GetDamage()); // Bullet damage calculated by distance
-			else if (grenade != nullptr)
-				currentEnemy->TakeDamage(MAX_HEALTH); // Grenade hits are insta-kill
+			currentEnemy->TakeDamage(weapon->GetDamage()); // Weapon damage calculated by distance
 
 			return false; // Weapon hit and should dissappear.
 		}
@@ -435,74 +445,21 @@ bool IsWeaponActive(Bullet* bullet, Grenade* grenade)
 }
 
 /// <summary>
-/// Checks whether a bullet hit an enemy.
+/// Checks whether a weapon hits a wall or an enemy.
 /// </summary>
-/// <param name="bullet">The bullet to handle</param>
-void CheckBulletHit(Bullet* bullet)
+/// <param name="weapon">The weapon to check hit</param>
+void CheckWeaponHit(Weapon* weapon)
 {
-	// Validation
-	if (bullet == nullptr)
-		return;
-
-	// Checks if the bullet hits a wall
-	if (!IsWeaponActive(bullet, nullptr)) // second argument for grenade
-		for (vector<Bullet*>::iterator bulletsIterator = bullets.begin(); bulletsIterator != bullets.end(); bulletsIterator++)
-			if ((*bulletsIterator)->GetLocation() == bullet->GetLocation())
-			{
-				bullets.erase(bulletsIterator);
-				break;
-			}
-}
-
-/// <summary>
-/// Checks whether a grenade hit an enemy.
-/// </summary>
-/// <param name="grenade">The grenade to handle</param>
-void CheckGrenadeHit(Grenade* grenade)
-{
-	double alpha = 0, teta = (360.0 / BULLETS_IN_GRENADE) * (180 / PI);
-	double grenadeRow, grenadeColumn;
-	Position bulletLocation;
-
-	// Validation
-	if (grenade == nullptr)
-		return;
-
-	if (!IsWeaponActive(nullptr, grenade)) // First argument for bullet
+	if (!IsWeaponActive(weapon))
 	{
-		grenadeRow = grenade->GetLocation().GetRow();
-		grenadeColumn = grenade->GetLocation().GetColumn();
+		if (weapon->IsCombustable())
+			ExplodeGrenade(weapon);
 
-		if (map[(int)grenadeRow + 1][(int)grenadeColumn] != WALL)
-		{
-			bulletLocation.SetRow(grenadeRow + 1);
-			bulletLocation.SetColumn(grenadeColumn);
-		}
-		else if (map[(int)grenadeRow - 1][(int)grenadeColumn] != WALL)
-		{
-			bulletLocation.SetRow(grenadeRow - 1);
-			bulletLocation.SetColumn(grenadeColumn);
-		}
-		else if (map[(int)grenadeRow][(int)grenadeColumn + 1] != WALL)
-		{
-			bulletLocation.SetRow(grenadeRow);
-			bulletLocation.SetColumn(grenadeColumn + 1);
-		}
-		else
-		{
-			bulletLocation.SetRow(grenadeRow);
-			bulletLocation.SetColumn(grenadeColumn - 1);
-		}
-
-		// Explodes the grenade and turns to manage its shards
-		for (int i = 0; i < BULLETS_IN_GRENADE; i++, alpha += teta)
-			bullets.push_back(new Bullet(bulletLocation, grenade->GetTeam(), alpha));
-
-		// Removes the grenade from the grenades vector
-		for (vector<Grenade*>::iterator grenadesIterator = grenades.begin(); grenadesIterator != grenades.end(); grenadesIterator++)
-			if ((*grenadesIterator)->GetLocation() == grenade->GetLocation())
+		// Removes the weapon from the weapons vector
+		for (vector<Weapon*>::iterator weaponsIterator = weapons.begin(); weaponsIterator != weapons.end(); weaponsIterator++)
+			if ((*weaponsIterator)->GetLocation() == weapon->GetLocation())
 			{
-				grenades.erase(grenadesIterator);
+				weapons.erase(weaponsIterator);
 				break;
 			}
 	}
@@ -973,8 +930,7 @@ void Restart()
 	securityMapVisible = false;
 
 	supplies.clear();
-	bullets.clear();
-	grenades.clear();
+	weapons.clear();
 	greyNodes.clear();
 	blackNodes.clear();
 
@@ -1066,8 +1022,7 @@ void IterateAttacker(Attacker* attacker)
 {
 	Courier* teamCourier = FindCourierByColor(attacker->GetTeam());
 	NPC* nearestEnemy = FindNearestEnemy(*attacker);
-	Bullet* shotBullet = nullptr;
-	Grenade* thrownGrenade = nullptr;
+	Weapon* shotWeapon = nullptr;
 
 	// Validation
 	if ((teamCourier == nullptr) || (nearestEnemy == nullptr))
@@ -1084,13 +1039,7 @@ void IterateAttacker(Attacker* attacker)
 	else if (attacker->IsAttacking())
 	{
 		if (attacker->GetArms() > 0)
-		{
-			attacker->Attack(nearestEnemy->GetLocation(), &shotBullet, &thrownGrenade);
-			if (shotBullet != nullptr)
-				bullets.push_back(shotBullet);
-			if (thrownGrenade != nullptr)
-				grenades.push_back(thrownGrenade);
-		}
+			weapons.push_back(attacker->Attack(nearestEnemy->GetLocation()));
 
 		attacker->GetActiveState()->Transform(attacker); // AttackState -> SearchShelterState (if dying) / SearchEnemyState (if not dying)
 	}
@@ -1248,11 +1197,8 @@ void display()
 
 	DrawMap();
 
-	for (int i = 0; i < bullets.size(); i++)
-		bullets[i]->Draw();
-
-	for (int i = 0; i < grenades.size(); i++)
-		grenades[i]->Draw();
+	for (int i = 0; i < weapons.size(); i++)
+		weapons[i]->Draw();
 
 	glutSwapBuffers(); // show all
 }
@@ -1266,7 +1212,7 @@ void idle()
 	{
 		system("CLS");
 		cout << "GAME OVER!";
-		Sleep(3500);
+		Sleep(3000);
 
 		exit(0);
 	}
@@ -1280,27 +1226,18 @@ void idle()
 	if (!gameOver)
 		IterateTeam(BLUE_TEAM);
 
-	Sleep(1000);
+	Sleep(100);
 
 	// Iterates spawned weaponry
-	for (int i = 0; i < bullets.size(); i++)
+	for (int i = 0; i < weapons.size(); i++)
 	{
-		weaponLocation = bullets[i]->GetLocation();
+		weaponLocation = weapons[i]->GetLocation();
 
-		bullets[i]->Move();
-		securityMap[(int)weaponLocation.GetRow()][(int)weaponLocation.GetColumn()] += BULLET_SECURITY_WEIGHT;
+		weapons[i]->Move();
+		securityMap[(int)weaponLocation.GetRow()][(int)weaponLocation.GetColumn()] += weapons[i]->IsCombustable() ?
+			GRENADE_SECURITY_WEIGHT : BULLET_SECURITY_WEIGHT;
 
-		CheckBulletHit(bullets[i]);
-	}
-
-	for (int i = 0; i < grenades.size(); i++)
-	{
-		weaponLocation = grenades[i]->GetLocation();
-
-		grenades[i]->Move();
-		securityMap[(int)weaponLocation.GetRow()][(int)weaponLocation.GetColumn()] += GRENADE_SECURITY_WEIGHT;
-
-		CheckGrenadeHit(grenades[i]);
+		CheckWeaponHit(weapons[i]);
 	}
 
 	glutPostRedisplay(); // indirect call to display

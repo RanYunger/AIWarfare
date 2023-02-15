@@ -1,10 +1,9 @@
 #pragma once
 
 // Includes
-#include "Bullet.h"
 #include "Courier.h"
-#include "Grenade.h"
 #include "NPC.h"
+#include "Weapon.h"
 
 #include <string>
 using namespace std;
@@ -40,7 +39,7 @@ public:
 
 	// Methods
 	void CallCourier(Courier* courier, int supply, int transaction);
-	void Attack(Position destination, Bullet** shotBullet, Grenade** thrownGrenade);
+	Weapon* Attack(Position destination);
 
 	bool HasLineOfSight(NPC npc, int map[MAP_DIMENSION][MAP_DIMENSION]);
 	bool IsAllyRequiresSupply(Attacker* attackers, int supply);

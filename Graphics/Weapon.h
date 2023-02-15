@@ -5,13 +5,14 @@
 #include "Position.h"
 #include "Settings.h"
 
-class Bullet
+class Weapon
 {
 private:
 	// Fields
 	Position location, previousLocation;
 	int team, damage;
 	double angle, directionRow, directionColumn;
+	bool isCombustable;
 
 public:
 	// Properties
@@ -36,10 +37,13 @@ public:
 	double GetDirectionColumn();
 	void SetDirectionColumn(double dC);
 
+	bool IsCombustable();
+	void SetIsCombustable(bool i);
+
 	// Constructors & Destructors
-	Bullet();
-	Bullet(Position l, double angle, int theta);
-	~Bullet();
+	Weapon();
+	Weapon(Position l, double a, int t, bool i);
+	~Weapon();
 
 	// Methods
 	void Move();
