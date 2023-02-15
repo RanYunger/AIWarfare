@@ -127,11 +127,18 @@ Position FindNextLocation(NPC* npc)
 	greyNodes.clear();
 	greyNodes.push_back(currentNode);
 
+	// TODO: FIX (WORKS TOO SLOW)
 	while (!pathFound)
 	{
 		// Validation
 		if (greyNodes.empty())
-			return source;
+		{
+			// TODO: FIX (for some reason it is empty)
+			cout << "Grey nodes vector is empty\n";
+			Sleep(3000);
+			exit(1);
+			//return source;
+		}
 
 		counter++;
 
@@ -379,11 +386,11 @@ void ExplodeGrenade(Weapon* grenade)
 	for (int i = 0; i < SHARDS_IN_GRENADE; i++, alpha += teta)
 	{
 		shardLocation = grenade->GetLocation();
-		dRow = (rand() % 2 == 0 ? 1 : -1) * WEAPON_STEP;
-		dColumn = (rand() % 2 == 0 ? 1 : -1) * WEAPON_STEP;
+		//dRow = (rand() % 2 == 0 ? 1 : -1) * WEAPON_STEP;
+		//dColumn = (rand() % 2 == 0 ? 1 : -1) * WEAPON_STEP;
 
-		shardLocation.SetRow(shardLocation.GetRow() + dRow);
-		shardLocation.SetColumn(shardLocation.GetColumn() + dColumn);
+		//shardLocation.SetRow(shardLocation.GetRow() + dRow);
+		//shardLocation.SetColumn(shardLocation.GetColumn() + dColumn);
 
 		weapons.push_back(new Weapon(shardLocation, alpha, grenade->GetTeam(), false));
 	}
@@ -452,7 +459,7 @@ void CheckWeaponHit(Weapon* weapon)
 {
 	if (!IsWeaponActive(weapon))
 	{
-		if (weapon->IsCombustable())
+		if ((weapon->IsCombustable()) && (weapon->GetDamage() == 0))
 			ExplodeGrenade(weapon);
 
 		// Removes the weapon from the weapons vector

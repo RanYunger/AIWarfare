@@ -51,7 +51,7 @@ Weapon::Weapon(Position l, double a, int t, bool i)
 	SetTeam(t);
 	SetIsCombustable(i);
 
-	SetDamage(HEALTH_BOOST);
+	SetDamage(i ? GRENADE_SECURITY_WEIGHT : HEALTH_BOOST);
 	SetDirectionRow(sin(a));
 	SetDirectionColumn(cos(a));
 }
