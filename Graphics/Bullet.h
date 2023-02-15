@@ -9,7 +9,7 @@ class Bullet
 {
 private:
 	// Fields
-	Position location;
+	Position location, previousLocation;
 	int team, damage;
 	double angle, directionRow, directionColumn;
 
@@ -17,6 +17,9 @@ public:
 	// Properties
 	Position GetLocation();
 	void SetLocation(Position l);
+
+	Position GetPreviousLocation();
+	void SetPreviousLocation(Position p);
 
 	double GetAngle();
 	void SetAngle(double a);
@@ -35,7 +38,7 @@ public:
 
 	// Constructors & Destructors
 	Bullet();
-	Bullet(Position l, double a, int t);
+	Bullet(Position l, double angle, int theta);
 	~Bullet();
 
 	// Methods

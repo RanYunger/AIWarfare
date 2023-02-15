@@ -9,6 +9,9 @@
 Position Bullet::GetLocation() { return location; }
 void Bullet::SetLocation(Position l) { location = l; }
 
+Position Bullet::GetPreviousLocation() { return previousLocation; }
+void Bullet::SetPreviousLocation(Position p) { previousLocation = p; }
+
 double Bullet::GetAngle() { return angle; }
 void Bullet::SetAngle(double a) { angle = a; }
 
@@ -28,6 +31,7 @@ void Bullet::SetDirectionColumn(double dC) { directionColumn = dC; }
 Bullet::Bullet()
 {
 	SetLocation(EMPTY_POSITION);
+	SetPreviousLocation(EMPTY_POSITION);
 	SetAngle(0);
 	SetTeam(-1);
 	SetDamage(0);
@@ -38,6 +42,7 @@ Bullet::Bullet()
 Bullet::Bullet(Position l, double a, int t)
 {
 	SetLocation(l);
+	SetPreviousLocation(l);
 	SetAngle(a);
 	SetTeam(t);
 	SetDamage(HEALTH_BOOST);
@@ -52,11 +57,18 @@ Bullet::~Bullet() {}
 /// </summary>
 void Bullet::Move()
 {
-	// Moves the bullet by BULLET_STEP to direction (directionColumn, directionRow) on the map
-	location.SetRow(location.GetRow() + GetDirectionRow() * WEAPON_STEP);
-	location.SetColumn(location.GetColumn() + GetDirectionColumn() * WEAPON_STEP);
+	int previousRow = (int)previousLocation.GetRow(), previousColumn = (int)previousLocation.GetColumn();
+	int currentRow = location.GetRow() + (GetDirectionRow() * WEAPON_STEP);
+	int currentColumn = location.GetColumn() + (GetDirectionColumn() * WEAPON_STEP);
 
-	damage = damage - 1 <= 0 ? 0 : damage - 1;
+	if ((currentRow != previousRow) || (currentColumn != previousColumn))
+	{
+		previousLocation = location;
+		damage = damage - 1 <= 0 ? 0 : damage - 1;
+	}
+
+	location.SetRow(currentRow);
+	location.SetColumn(currentColumn);
 }
 
 /// <summary>

@@ -52,7 +52,7 @@ void NPC::TakeDamage(int damage)
 {
 	health = health - damage <= 0 ? 0 : health - damage;
 
-	if (meds > 0)
+	if ((damage < MAX_HEALTH) && (meds > 0))
 	{
 		health = health + HEALTH_BOOST >= MAX_HEALTH ? MAX_HEALTH : health + HEALTH_BOOST;
 		meds = meds - 1 <= 0 ? 0 : meds - 1;

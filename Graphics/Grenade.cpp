@@ -54,7 +54,6 @@ Grenade::~Grenade() {}
 /// </summary>
 void Grenade::Move()
 {
-	// Moves the grenade by BULLET_STEP to direction (directionColumn, directionRow)
 	location.SetRow(location.GetRow() + (directionRow * WEAPON_STEP));
 	location.SetColumn(location.GetColumn() + (directionColumn * WEAPON_STEP));
 }
