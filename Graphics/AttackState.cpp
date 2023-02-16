@@ -17,11 +17,8 @@ AttackState::~AttackState() {}
 /// <param name="npc">The NPC</param>
 void AttackState::Transform(NPC* npc)
 {
-	State* nextState = npc->GetHealth() <= 10 + (rand() % 10) || npc->GetArms() <= 0 ? (State*)new SearchShelterState()
-		: (State*)new SearchEnemyState();
-
 	OnExit(npc);
-	npc->SetActiveState(nextState);
+	npc->SetActiveState((State*)new SearchShelterState());
 	npc->GetActiveState()->OnEnter(npc);
 }
 

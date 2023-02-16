@@ -41,6 +41,6 @@ public:
 	void CallCourier(Courier* courier, int supply, int transaction);
 	Weapon* Attack(Position destination);
 
-	bool HasLineOfSight(NPC npc, int map[MAP_DIMENSION][MAP_DIMENSION]);
+	bool HasLineOfSight(NPC enemyNPC, int map[MAP_DIMENSION][MAP_DIMENSION]);
 	bool IsAllyRequiresSupply(Attacker* attackers, int supply);
 };

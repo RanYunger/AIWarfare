@@ -69,20 +69,38 @@ Weapon* Attacker::Attack(Position destination)
 /// <summary>
 /// Indicates whether there's a line of sight between the attacker and another NPC.
 /// </summary>
-/// <param name="npc">The other npc</param>
+/// <param name="enemyNPC">The enemy npc</param>
 /// <param name="map">The map to check line of sight on</param>
 /// <returns>True if there's a line of sight, False otherwise</returns>
-bool Attacker::HasLineOfSight(NPC npc, int map[MAP_DIMENSION][MAP_DIMENSION])
+bool Attacker::HasLineOfSight(NPC enemyNPC, int map[MAP_DIMENSION][MAP_DIMENSION])
 {
 	double myRow = location.GetRow(), myColumn = location.GetColumn(),
-		otherRow = npc.GetLocation().GetRow(), otherColumn = npc.GetLocation().GetColumn();
-	double rowDiff = otherRow - myRow, columnDiff = otherColumn - myColumn;
-	double length = sqrt(rowDiff * rowDiff + columnDiff * columnDiff);
-	double dRow = rowDiff / length, dColumn = columnDiff / length;
+		otherRow = enemyNPC.GetLocation().GetRow(), otherColumn = enemyNPC.GetLocation().GetColumn();
+	double x = myRow, dx = abs(otherRow - myRow);
+	double y = myColumn, dy = abs(otherColumn - myColumn);
+	int sx = (myRow < otherRow) ? 1 : -1;
+	int sy = (myColumn < otherColumn) ? 1 : -1;
+	double err = dx - dy, err2;
 
-	for (double row = myRow, column = myColumn; ((int)row != otherRow) && ((int)column != otherColumn); row += dRow, column += dColumn)
-		if (map[(int)round(row)][(int)round(column)] == WALL)
-			return false;
+	while (true)
+	{
+		if (map[(int)x][(int)y] == WALL)
+			return false; // Line of sight is blocked
+		if ((abs(x - otherRow) < 0.1) && (abs(y - otherColumn) < 0.1))
+			return true; // Line of sight is unblocked
+
+		err2 = 2 * err;
+		if (err2 > -dy)
+		{
+			err -= dy;
+			x += sx;
+		}
+		if (err2 < dx)
+		{
+			err += dx;
+			y += sy;
+		}
+	}
 
 	return true;
 }

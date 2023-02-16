@@ -15,7 +15,7 @@ const int WINDOW_HEIGHT = 50, WINDOW_WIDTH = 400;
 const int MAP_DIMENSION = 100;
 const int WALL = 1, SPACE = 2;
 const int SPACE_WEIGHT = 1, WALL_WEIGHT = 5;
-const int MAX_ITERATIONS = MAP_DIMENSION * MAP_DIMENSION;
+const int MAX_ITERATIONS = (MAP_DIMENSION* MAP_DIMENSION) / 6;
 
 // Room Related
 const int EDGE_OFFSET = 15;
@@ -29,5 +29,5 @@ const int HEALTH_BOOST = 20, MAX_HEALTH = 100, MAX_ARMS = 3, MAX_MEDS = 3;
 
 // Weaponry related
 const int SHARDS_IN_GRENADE = 16;
-const double WEAPON_SIZE = 0.5, WEAPON_STEP = 0.75;
+const double WEAPON_SIZE = 0.5, WEAPON_STEP = 1.25;
 const double BULLET_SECURITY_WEIGHT = 1, GRENADE_SECURITY_WEIGHT = 3;
