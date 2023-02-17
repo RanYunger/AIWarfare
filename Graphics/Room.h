@@ -13,7 +13,7 @@ private:
 public:
 	// Properties
 	Position GetCenterPosition();
-	void SetCenterPosition(Position* p);
+	void SetCenterPosition(Position p);
 
 	int GetID();
 	void SetID(int i);
@@ -26,7 +26,7 @@ public:
 
 	// Constructors & Destructors
 	Room();
-	Room(Position* p, int i, int h, int w);
+	Room(Position p, int i, int h, int w);
 	~Room();
 
 	// Methods

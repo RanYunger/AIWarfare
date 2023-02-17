@@ -43,6 +43,7 @@ public:
 
 	// Constructors & Destructors
 	NPC();
+	NPC(Position l, int t, int r, int a, int m);
 	~NPC();
 
 	// Methods

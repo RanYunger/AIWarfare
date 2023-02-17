@@ -5,7 +5,7 @@
 
 // Properties
 Position Room::GetCenterPosition() { return centerPosition; }
-void Room::SetCenterPosition(Position* p) { centerPosition = *p; }
+void Room::SetCenterPosition(Position p) { centerPosition = p; }
 
 int Room::GetID() { return id; }
 void Room::SetID(int i) { id = i; }
@@ -18,7 +18,7 @@ void Room::SetWidth(int w) { width = w; }
 
 // Constructors & Destructors
 Room::Room() {}
-Room::Room(Position* p, int i, int h, int w)
+Room::Room(Position p, int i, int h, int w)
 {
 	SetCenterPosition(p);
 	SetID(i);

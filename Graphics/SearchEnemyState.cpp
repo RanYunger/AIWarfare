@@ -1,7 +1,6 @@
 // Includes
 #include "SearchEnemyState.h"
 
-#include "AttackState.h"
 #include "SearchShelterState.h"
 
 // Properties
@@ -18,10 +17,8 @@ SearchEnemyState::~SearchEnemyState() {}
 /// <param name="npc">The NPC</param>
 void SearchEnemyState::Transform(NPC* npc)
 {
-	State* nextState = npc->GetHealth() <= 10 + (rand() % 10) ? (State*)new SearchShelterState() : (State*)new AttackState();
-
 	OnExit(npc);
-	npc->SetActiveState(nextState);
+	npc->SetActiveState((State*)new SearchShelterState());
 	npc->GetActiveState()->OnEnter(npc);
 }
 

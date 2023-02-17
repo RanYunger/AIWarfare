@@ -25,7 +25,7 @@ public:
 	// Methods
 
 	// Operators
-	bool operator == (const Position& other) { return (row == other.row) && (column == other.column); }
-	bool operator != (const Position& other) { return (row != other.row) || (column != other.column); }
-	bool operator | (const Position& other) { return fabs(row - other.row) + fabs(column - other.column) == 1; } // "neighbor" positions
+	bool operator == (const Position& other) { return ((int)row == (int)other.row) && ((int)column == (int)other.column); }
+	bool operator != (const Position& other) { return ((int)row != (int)other.row) || ((int)column != (int)other.column); }
+	bool operator | (const Position& other) { return fabs(row - other.row) + fabs(column - other.column) < 0.1; } // "neighbor" positions
 };

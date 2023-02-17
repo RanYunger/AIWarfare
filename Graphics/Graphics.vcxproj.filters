@@ -48,16 +48,10 @@
     <ClCompile Include="SearchShelterState.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="AttackState.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="SearchSupplyState.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SearchAllyState.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ShareSupplyState.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="State.cpp">
@@ -98,16 +92,10 @@
     <ClInclude Include="SearchShelterState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="AttackState.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="SearchSupplyState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SearchAllyState.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ShareSupplyState.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="State.h">

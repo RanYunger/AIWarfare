@@ -29,16 +29,17 @@ int NPC::GetMeds() { return meds; }
 void NPC::SetMeds(int m) { meds = m; }
 
 // Constructors & Destructors
-NPC::NPC()
+NPC::NPC() {}
+NPC::NPC(Position l, int t, int r, int a, int m)
 {
-	SetLocation(EMPTY_POSITION);
+	SetLocation(l);
 	SetDestination(EMPTY_POSITION);
 	SetActiveState(nullptr);
 	SetHealth(MAX_HEALTH);
-	SetTeam(-1);
-	SetRoom(-1);
-	SetArms(MAX_ARMS);
-	SetMeds(MAX_MEDS);
+	SetTeam(t);
+	SetRoom(r);
+	SetArms(a);
+	SetMeds(m);
 }
 NPC::~NPC() {}
 
@@ -52,7 +53,7 @@ void NPC::TakeDamage(int damage)
 {
 	health = health - damage <= 0 ? 0 : health - damage;
 
-	if ((damage < MAX_HEALTH) && (meds > 0))
+	if (meds > 0)
 	{
 		health = health + HEALTH_BOOST >= MAX_HEALTH ? MAX_HEALTH : health + HEALTH_BOOST;
 		meds = meds - 1 <= 0 ? 0 : meds - 1;

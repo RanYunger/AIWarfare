@@ -1,7 +1,7 @@
 // Includes
 #include "SearchAllyState.h"
 
-#include "ShareSupplyState.h"
+#include "SearchSupplyState.h"
 
 // Properties
 
@@ -18,7 +18,7 @@ SearchAllyState::~SearchAllyState() {}
 void SearchAllyState::Transform(NPC* npc)
 {
 	OnExit(npc);
-	npc->SetActiveState((State*)new ShareSupplyState());
+	npc->SetActiveState((State*)new SearchSupplyState());
 	npc->GetActiveState()->OnEnter(npc);
 }
 

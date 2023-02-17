@@ -29,5 +29,5 @@ const int HEALTH_BOOST = 20, MAX_HEALTH = 100, MAX_ARMS = 3, MAX_MEDS = 3;
 
 // Weaponry related
 const int SHARDS_IN_GRENADE = 16;
-const double WEAPON_SIZE = 0.5, WEAPON_STEP = 1.25;
+const double WEAPON_SIZE = 0.5, WEAPON_STEP = 1.5;
 const double BULLET_SECURITY_WEIGHT = 1, GRENADE_SECURITY_WEIGHT = 3;

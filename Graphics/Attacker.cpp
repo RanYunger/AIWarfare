@@ -20,17 +20,14 @@ void Attacker::SetIsSearchingEnemy(bool i) { isSearchingEnemy = i; }
 bool Attacker::IsSearchingShelter() { return isSearchingShelter; }
 void Attacker::SetIsSearchingShelter(bool i) { isSearchingShelter = i; }
 
-bool Attacker::IsAttacking() { return isAttacking; }
-void Attacker::SetIsAttacking(bool i) { isAttacking = i; }
-
 // Constructors & Destructors
-Attacker::Attacker()
-	: NPC()
+Attacker::Attacker(){}
+Attacker::Attacker(Position l, int t, int r, int a, int m)
+	: NPC(l, t, r, a, m)
 {
 	SetSteppedOn(SPACE);
 	SetIsSearchingEnemy(false);
 	SetIsSearchingShelter(false);
-	SetIsAttacking(false);
 
 	SetActiveState((State*)new SearchEnemyState());
 	GetActiveState()->OnEnter(this);
@@ -105,35 +102,10 @@ bool Attacker::HasLineOfSight(NPC enemyNPC, int map[MAP_DIMENSION][MAP_DIMENSION
 	return true;
 }
 
-/// <summary>
-/// Indicates whether any of the attacker's allies requires a supply.
-/// </summary>
-/// <param name="attackers">The attackers of both teams</param>
-/// <param name="supply">The supply to check if any of the allies needs</param>
-/// <returns>True if the supply is required, False otherwise</returns>
-bool Attacker::IsAllyRequiresSupply(Attacker* attackers, int supply)
-{
-	for (int i = 0; i < ATTACKERS_IN_TEAM; i++)
-	{
-		// Validation
-		if ((attackers[i].GetHealth() == 0) || (attackers[i].GetTeam() != team))
-			continue;
-
-		if ((supply == ARMS) && (attackers[i].GetArms() == 0))
-			return true;
-		if ((supply == MEDS) && (attackers[i].GetMeds() == 0))
-			return true;
-	}
-
-	return false;
-}
-
 string Attacker::GetStateName()
 {
 	if (isSearchingEnemy)
 		return "Searching Enemy State";
-	if (isAttacking)
-		return "Attacking State";
 	if (isSearchingShelter)
 		return "Searching Shelter State";
 

@@ -15,7 +15,7 @@ class Attacker : public NPC
 private:
 	// Fields
 	int steppedOn;
-	bool isSearchingEnemy, isSearchingShelter, isAttacking;
+	bool isSearchingEnemy, isSearchingShelter;
 
 public:
 	// Properties
@@ -28,13 +28,11 @@ public:
 	bool IsSearchingShelter();
 	void SetIsSearchingShelter(bool i);
 
-	bool IsAttacking();
-	void SetIsAttacking(bool i);
-
 	string GetStateName();
 
 	// Constructors & Destructors
 	Attacker();
+	Attacker(Position l, int t, int r, int a, int m);
 	~Attacker();
 
 	// Methods
@@ -42,5 +40,4 @@ public:
 	Weapon* Attack(Position destination);
 
 	bool HasLineOfSight(NPC enemyNPC, int map[MAP_DIMENSION][MAP_DIMENSION]);
-	bool IsAllyRequiresSupply(Attacker* attackers, int supply);
 };

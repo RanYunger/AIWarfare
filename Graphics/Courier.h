@@ -14,7 +14,7 @@ class Courier : public NPC
 private:
 	// Fields
 	int supply, transaction;
-	bool isSearchingSupply, isSearchingAlly, isSharingSupply, isCalled;
+	bool isSearchingSupply, isSearchingAlly, isCalled;
 
 public:
 	// Properties
@@ -30,9 +30,6 @@ public:
 	bool IsSearchingAlly();
 	void SetIsSearchingAlly(bool i);
 
-	bool IsSharingSupply();
-	void SetIsSharingSupply(bool i);
-
 	bool IsCalled();
 	void SetIsCalled(bool i);
 
@@ -40,6 +37,7 @@ public:
 
 	// Constructors & Destructors
 	Courier();
+	Courier(Position l, int t, int r, int a, int m);
 	~Courier();
 
 	// Methods

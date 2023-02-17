@@ -19,21 +19,18 @@ void Courier::SetIsSearchingSupply(bool i) { isSearchingSupply = i; }
 bool Courier::IsSearchingAlly() { return isSearchingAlly; }
 void Courier::SetIsSearchingAlly(bool i) { isSearchingAlly = i; }
 
-bool Courier::IsSharingSupply() { return isSharingSupply; }
-void Courier::SetIsSharingSupply(bool i) { isSharingSupply = i; }
-
 bool Courier::IsCalled() { return isCalled; }
 void Courier::SetIsCalled(bool i) { isCalled = i; }
 
 // Constructors & Destructors
-Courier::Courier()
-	: NPC()
+Courier::Courier() {}
+Courier::Courier(Position l, int t, int r, int a, int m)
+	: NPC(l, t, r, a, m)
 {
 	SetSupply(-1);
 	SetTransaction(-1);
-	SetIsSharingSupply(false);
+	SetIsSearchingSupply(false);
 	SetIsSearchingAlly(false);
-	SetIsSharingSupply(false);
 	SetIsCalled(false);
 
 	SetActiveState((State*)new SearchSupplyState());
@@ -132,8 +129,6 @@ string Courier::GetStateName()
 		return "Searching supply State";
 	if (isSearchingAlly)
 		return "Searching ally State";
-	if (isSharingSupply)
-		return "Sharing supply State";
 
 	return "ERROR - no state detected";
 }

@@ -118,7 +118,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="AttackState.cpp" />
     <ClCompile Include="Weapon.cpp" />
     <ClCompile Include="Courier.cpp" />
     <ClCompile Include="main.cpp" />
@@ -132,11 +131,9 @@
     <ClCompile Include="SearchEnemyState.cpp" />
     <ClCompile Include="SearchShelterState.cpp" />
     <ClCompile Include="SearchSupplyState.cpp" />
-    <ClCompile Include="ShareSupplyState.cpp" />
     <ClCompile Include="State.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AttackState.h" />
     <ClInclude Include="Weapon.h" />
     <ClInclude Include="Courier.h" />
     <ClInclude Include="Node.h" />
@@ -150,7 +147,6 @@
     <ClInclude Include="SearchSupplyState.h" />
     <ClInclude Include="Settings.h" />
     <ClInclude Include="Attacker.h" />
-    <ClInclude Include="ShareSupplyState.h" />
     <ClInclude Include="State.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
