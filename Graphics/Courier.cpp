@@ -23,7 +23,18 @@ bool Courier::IsCalled() { return isCalled; }
 void Courier::SetIsCalled(bool i) { isCalled = i; }
 
 // Constructors & Destructors
-Courier::Courier() {}
+Courier::Courier()
+	:NPC()
+{
+	SetSupply(-1);
+	SetTransaction(-1);
+	SetIsSearchingSupply(false);
+	SetIsSearchingAlly(false);
+	SetIsCalled(false);
+
+	SetActiveState((State*)new SearchSupplyState());
+	GetActiveState()->OnEnter(this);
+}
 Courier::Courier(Position l, int t, int r, int a, int m)
 	: NPC(l, t, r, a, m)
 {

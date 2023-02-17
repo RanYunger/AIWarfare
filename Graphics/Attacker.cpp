@@ -21,7 +21,15 @@ bool Attacker::IsSearchingShelter() { return isSearchingShelter; }
 void Attacker::SetIsSearchingShelter(bool i) { isSearchingShelter = i; }
 
 // Constructors & Destructors
-Attacker::Attacker(){}
+Attacker::Attacker()
+{
+	SetSteppedOn(SPACE);
+	SetIsSearchingEnemy(false);
+	SetIsSearchingShelter(false);
+
+	SetActiveState((State*)new SearchEnemyState());
+	GetActiveState()->OnEnter(this);
+}
 Attacker::Attacker(Position l, int t, int r, int a, int m)
 	: NPC(l, t, r, a, m)
 {
@@ -71,13 +79,25 @@ Weapon* Attacker::Attack(Position destination)
 /// <returns>True if there's a line of sight, False otherwise</returns>
 bool Attacker::HasLineOfSight(NPC enemyNPC, int map[MAP_DIMENSION][MAP_DIMENSION])
 {
-	double myRow = location.GetRow(), myColumn = location.GetColumn(),
-		otherRow = enemyNPC.GetLocation().GetRow(), otherColumn = enemyNPC.GetLocation().GetColumn();
-	double x = myRow, dx = abs(otherRow - myRow);
-	double y = myColumn, dy = abs(otherColumn - myColumn);
-	int sx = (myRow < otherRow) ? 1 : -1;
-	int sy = (myColumn < otherColumn) ? 1 : -1;
-	double err = dx - dy, err2;
+	double myRow, myColumn, otherRow, otherColumn;
+	double x, y, dx, dy, err, err2;
+	int sx, sy;
+
+	// Validation
+	if (location == enemyNPC.GetLocation())
+		return true;
+
+	myRow = location.GetRow();
+	myColumn = location.GetColumn();
+	otherRow = enemyNPC.GetLocation().GetRow();
+	otherColumn = enemyNPC.GetLocation().GetColumn();
+
+	x = myRow; dx = abs(otherRow - myRow);
+	y = myColumn; dy = abs(otherColumn - myColumn);
+	err = dx - dy;
+
+	sx = (myRow < otherRow) ? 1 : -1;
+	sy = (myColumn < otherColumn) ? 1 : -1;
 
 	while (true)
 	{
@@ -100,6 +120,17 @@ bool Attacker::HasLineOfSight(NPC enemyNPC, int map[MAP_DIMENSION][MAP_DIMENSION
 	}
 
 	return true;
+}
+
+/// <summary>
+/// Indicates whether the attacker can attack an enemy NPC.
+/// </summary>
+/// <param name="enemyNPC">The enemy NPC to attack</param>
+/// <param name="map">The map to check Line of Sight</param>
+/// <returns>True if the attacker can attack the enemy NPC, False otherwise</returns>
+bool Attacker::CanAttack(NPC enemyNPC, int map[MAP_DIMENSION][MAP_DIMENSION])
+{
+	return (enemyNPC.GetRoom() != -1) && (room == enemyNPC.GetRoom()) && (HasLineOfSight(enemyNPC, map)) && (arms > 0);
 }
 
 string Attacker::GetStateName()

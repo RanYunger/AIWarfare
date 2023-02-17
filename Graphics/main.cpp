@@ -22,6 +22,7 @@ using namespace std;
 
 // Fields
 bool gameOver = false, restart = false, securityMapVisible = false, pathFound = false;
+int deadRedTeammates = 0, deadBlueTeammates = 0;
 int map[MAP_DIMENSION][MAP_DIMENSION] = { 0 };
 double securityMap[MAP_DIMENSION][MAP_DIMENSION] = { 0 };
 
@@ -97,10 +98,10 @@ Node* FindMinimalFNode()
 {
 	Node* minimalNode;
 	int eraseOffset = 0;
-	float minimalF = MAX_ITERATIONS;
+	double minimalF = (double)MAX_ITERATIONS;
 
 	// Retrieves Node with minimal f value
-	for (int i = 0; i < greyNodes.size(); i++)
+	for (int i = 0; i < (int)greyNodes.size(); i++)
 		if (greyNodes[i]->GetF() < minimalF)
 		{
 			minimalF = greyNodes[i]->GetF();
@@ -185,22 +186,6 @@ Position FindNextLocation(NPC* npc)
 }
 
 /// <summary>
-/// Finds an attacker by its location.
-/// </summary>
-/// <param name="attackerLocation">The requested attacker's location</param>
-/// <returns>The Attacker in the given location (if there's one), Nullptr otherwise</returns>
-Attacker* FindAttackerByLocation(Position attackerLocation)
-{
-	Position currentLocation;
-
-	for (int i = 0; i < ATTACKERS_IN_TEAM; i++)
-		if (attackers[i]->GetLocation() == attackerLocation)
-			return attackers[i];
-
-	return nullptr;
-}
-
-/// <summary>
 /// Finds the enemy nearest to a Attacker.
 /// </summary>
 /// <param name="attacker">The attacker that searches an enemy</param>
@@ -214,7 +199,7 @@ NPC* FindNearestEnemy(Attacker attacker)
 	for (int i = 0; i < 2 * ATTACKERS_IN_TEAM; i++)
 	{
 		// Validation
-		if ((attackers[i]->GetTeam() == attacker.GetTeam()) || (attackers[i]->GetHealth() <= 0))
+		if ((attackers[i] == nullptr) || (attackers[i]->GetTeam() == attacker.GetTeam()))
 			continue;
 
 		currentDistance = ManhattanDistance(attackers[i]->GetLocation(), attacker.GetLocation());
@@ -228,14 +213,14 @@ NPC* FindNearestEnemy(Attacker attacker)
 	for (int i = 0; i < 2 * COURIERS_IN_TEAM; i++)
 	{
 		// Validation
-		if ((couriers[i]->GetTeam() == attacker.GetTeam()) || (couriers[i]->GetHealth() <= 0))
+		if ((couriers[i] == nullptr) || (couriers[i]->GetTeam() == attacker.GetTeam()))
 			continue;
 
 		currentDistance = ManhattanDistance(couriers[i]->GetLocation(), attacker.GetLocation());
 		if (currentDistance < nearestDistance)
 		{
 			nearestDistance = currentDistance;
-			nearestEnemy = (NPC*)attackers[i];
+			nearestEnemy = (NPC*)couriers[i];
 		}
 	}
 
@@ -258,7 +243,7 @@ Attacker* FindNearestAlly(Courier courier)
 	for (int i = 0; i < 2 * ATTACKERS_IN_TEAM; i++)
 	{
 		// Validation
-		if (attackers[i]->GetHealth() <= 0)
+		if ((attackers[i] == nullptr) || (attackers[i]->GetTeam() != courier.GetTeam()))
 			continue;
 
 		currentDistance = ManhattanDistance(courier.GetLocation(), attackers[i]->GetLocation());
@@ -300,13 +285,13 @@ Position FindNearestSupply(Courier* courier)
 	double currentDistance, nearestDistance = (double)MAX_ITERATIONS;
 
 	// Validation
-	if (supplies.size() == 0)
+	if ((int)supplies.size() == 0)
 	{
 		cout << "No supplies to collect\n";
 		return courier->GetLocation();
 	}
 
-	for (int i = 0; i < supplies.size(); i++)
+	for (int i = 0; i < (int)supplies.size(); i++)
 	{
 		currentDistance = ManhattanDistance(courier->GetLocation(), *supplies[i]);
 		if (currentDistance < nearestDistance)
@@ -375,10 +360,10 @@ bool IsWeaponActive(Weapon* weapon)
 	for (int i = 0; i < 2 * ATTACKERS_IN_TEAM; i++)
 	{
 		// Validation
-		if ((attackers[i]->GetTeam() == weapon->GetTeam()) || (attackers[i]->GetHealth() <= 0))
+		if ((attackers[i] == nullptr) || (attackers[i]->GetTeam() == weapon->GetTeam()))
 			continue;
 
-		if (weaponLocation | attackers[i]->GetLocation())
+		if (ManhattanDistance(weaponLocation, attackers[i]->GetLocation()) <= WEAPON_STEP)
 		{
 			attackers[i]->TakeDamage(weapon->GetDamage()); // Weapon damage calculated by distance
 
@@ -389,10 +374,10 @@ bool IsWeaponActive(Weapon* weapon)
 	for (int i = 0; i < 2 * COURIERS_IN_TEAM; i++)
 	{
 		// Validation
-		if ((couriers[i]->GetTeam() == weapon->GetTeam()) || (couriers[i]->GetHealth() <= 0))
+		if ((couriers[i] == nullptr) || (couriers[i]->GetTeam() == weapon->GetTeam()))
 			continue;
 
-		if (weaponLocation | couriers[i]->GetLocation())
+		if (ManhattanDistance(weaponLocation, attackers[i]->GetLocation()) <= WEAPON_STEP)
 		{
 			couriers[i]->TakeDamage(weapon->GetDamage()); // Weapon damage calculated by distance
 
@@ -638,7 +623,7 @@ void DigTunnel(int room1ID, int room2ID)
 bool IsRoomOverlapping(int centerRow, int centerColumn, int height, int width)
 {
 	Position currentPosition;
-	int dx, dy;
+	double dx, dy;
 
 	for (int i = 0; i < MAX_ROOMS; i++)
 	{
@@ -650,7 +635,7 @@ bool IsRoomOverlapping(int centerRow, int centerColumn, int height, int width)
 		dx = fabs(centerColumn - currentPosition.GetColumn());
 		dy = fabs(centerRow - currentPosition.GetRow());
 
-		if ((dx < ((width + rooms[i]->GetWidth()) / 2 + 4)) && (dy < ((height + rooms[i]->GetHeight()) / 2 + 4)))
+		if ((dx < (((double)width + rooms[i]->GetWidth()) / 2 + 4)) && (dy < (((double)height + rooms[i]->GetHeight()) / 2 + 4)))
 			return true;
 	}
 
@@ -663,11 +648,9 @@ bool IsRoomOverlapping(int centerRow, int centerColumn, int height, int width)
 /// <param name="room">The room to place obstacles in</param>
 void PlaceObstacles(Room* room)
 {
-	int roomRowStart = (int)fabs(room->GetCenterPosition().GetRow() - room->GetHeight() / 2) + 3;
-	int roomRowEnd = ((int)room->GetCenterPosition().GetRow() + room->GetHeight() / 2) - 3;
-	int roomColumnStart = (int)fabs(room->GetCenterPosition().GetColumn() - room->GetWidth() / 2) + 3;
-	int roomColumnEnd = ((int)room->GetCenterPosition().GetColumn() + room->GetWidth() / 2) - 3;
-	int obstaclesCount = 2 + rand() % (MAX_OBSTACLES_IN_ROOM - 2), orientation = rand() % 2;
+	int roomRowStart = (int)fabs(room->GetCenterPosition().GetRow() - room->GetHeight() / 2);
+	int roomColumnStart = (int)fabs(room->GetCenterPosition().GetColumn() - room->GetWidth() / 2);
+	int obstaclesCount = 2 + rand() % (MAX_OBSTACLES_IN_ROOM - 2);
 	int row, column;
 
 	// Fills the room with obstacles
@@ -675,28 +658,12 @@ void PlaceObstacles(Room* room)
 	{
 		do
 		{
-			row = (roomRowStart + 5) + rand() % (roomRowEnd - (roomRowStart + 5));
-			column = (roomColumnStart + 5) + rand() % (roomColumnEnd - (roomColumnStart + 5));
+			row = roomRowStart + rand() % room->GetHeight();
+			column = roomColumnStart + rand() % room->GetWidth();
 		} while (map[row][column] != SPACE);
 
 		map[row][column] = WALL;
 	}
-}
-
-/// <summary>
-/// Indicates whether a supply can be placed at a specific location.
-/// </summary>
-/// <param name="row">The location's row offset</param>
-/// <param name="column">The location's column offset</param>
-/// <returns>True if the supply can be placed, False otherwise</returns>
-bool CanPlaceSupply(int row, int column)
-{
-	if (map[row][column] != SPACE)
-		return false;
-	if ((map[row - 1][column] != SPACE) || (map[row + 1][column] != SPACE) || (map[row][column - 1] != SPACE) || (map[row][column + 1] != SPACE))
-		return false;
-
-	return true;
 }
 
 /// <summary>
@@ -706,9 +673,7 @@ bool CanPlaceSupply(int row, int column)
 void PlaceSupplies(Room* room)
 {
 	int roomRowStart = (int)fabs(room->GetCenterPosition().GetRow() - room->GetHeight() / 2);
-	int roomRowEnd = (int)room->GetCenterPosition().GetRow() + room->GetHeight() / 2;
 	int roomColumnStart = (int)fabs(room->GetCenterPosition().GetColumn() - room->GetWidth() / 2);
-	int roomColumnEnd = (int)room->GetCenterPosition().GetColumn() + room->GetWidth() / 2;
 	int ammosCount = rand() % ARMS, medsCount = rand() % MAX_MEDS_IN_ROOM;
 	int row, column;
 
@@ -717,9 +682,9 @@ void PlaceSupplies(Room* room)
 	{
 		do
 		{
-			row = roomRowStart + rand() % (roomRowEnd + 1);
-			column = roomColumnStart + rand() % (roomColumnEnd + 1);
-		} while (!CanPlaceSupply(row, column));
+			row = roomRowStart + rand() % room->GetHeight();
+			column = roomColumnStart + rand() % room->GetWidth();
+		} while (map[row][column] == WALL);
 
 		map[row][column] = ARMS;
 		supplies.push_back(new Position(row, column));
@@ -730,9 +695,9 @@ void PlaceSupplies(Room* room)
 	{
 		do
 		{
-			row = roomRowStart + rand() % (roomRowEnd + 1);
-			column = roomColumnStart + rand() % (roomColumnEnd + 1);
-		} while (!CanPlaceSupply(row, column));
+			row = roomRowStart + rand() % room->GetHeight();
+			column = roomColumnStart + rand() % room->GetWidth();
+		} while (map[row][column] == WALL);
 
 		map[row][column] = MEDS;
 		supplies.push_back(new Position(row, column));
@@ -818,8 +783,7 @@ void InitGame()
 		spawnLocation = RandomizeNPCSpawn(i < ATTACKERS_IN_TEAM ? rooms[redTeamSpawnRoom] : rooms[blueTeamSpawnRoom],
 			i < ATTACKERS_IN_TEAM ? RED_TEAM : BLUE_TEAM);
 
-		attackers[i] = new Attacker(spawnLocation, i < ATTACKERS_IN_TEAM ? RED_TEAM : BLUE_TEAM,
-			i < ATTACKERS_IN_TEAM ? redTeamSpawnRoom : blueTeamSpawnRoom, MAX_ARMS, 0);
+		attackers[i] = new Attacker(spawnLocation, i < ATTACKERS_IN_TEAM ? RED_TEAM : BLUE_TEAM, i < ATTACKERS_IN_TEAM ? redTeamSpawnRoom : blueTeamSpawnRoom, 1, 0);
 
 		map[(int)spawnLocation.GetRow()][(int)spawnLocation.GetColumn()] = attackers[i]->GetTeam();
 	}
@@ -916,6 +880,9 @@ void Restart()
 	securityMapVisible = false;
 	pathFound = false;
 
+	deadRedTeammates = 0;
+	deadBlueTeammates = 0;
+
 	supplies.clear();
 	weapons.clear();
 	greyNodes.clear();
@@ -937,20 +904,6 @@ void MoveAttacker(Attacker* attacker, Position newLocation)
 	Position oldLocation = attacker->GetLocation();
 	int oldRow = (int)oldLocation.GetRow(), oldColumn = (int)oldLocation.GetColumn();
 	int newRow = (int)newLocation.GetRow(), newColumn = (int)newLocation.GetColumn();
-
-	//Attacker* otherAttacker;
-	// Validation (TODO: FIX)
-	//if ((map[newRow][newColumn] == RED_TEAM) || (map[newRow][newColumn] == BLUE_TEAM))
-	//{
-	//	otherAttacker = FindAttackerByLocation(newLocation);
-	//	if (otherAttacker == nullptr)
-	//	{
-	//		cout << "Error in 'MoveAttacker' function (line 956)\n";
-	//		exit(1);
-	//	}
-	//	else
-	//		attacker->SetSteppedOn(otherAttacker->GetSteppedOn());
-	//}
 
 	// Moves color-wise
 	map[oldRow][oldColumn] = attacker->GetSteppedOn();
@@ -984,7 +937,7 @@ void MoveCourier(Courier* courier, Position newLocation)
 		courier->PickSupply(map[newRow][newColumn]);
 
 		// Removes the supply from vector
-		for (int i = 0; i < supplies.size(); i++)
+		for (int i = 0; i < (int)supplies.size(); i++)
 			if ((supplies[i]->GetRow() == newRow) && (supplies[i]->GetColumn() == newColumn))
 			{
 				supplies.erase(supplies.begin() + i);
@@ -1030,7 +983,7 @@ bool IsAllyRequiresSupply(Attacker attacker, int supply)
 /// <param name="attacker">The attacker to activate</param>
 void IterateAttacker(Attacker* attacker)
 {
-	NPC* nearestEnemy = FindNearestEnemy(*attacker);
+	NPC* nearestEnemy = nullptr;
 	Courier* teamCourier = nullptr;
 	Position nearestShelter;
 
@@ -1042,54 +995,55 @@ void IterateAttacker(Attacker* attacker)
 			break;
 		}
 
+	attacker->SetDestination(attacker->GetLocation());
+
 	// Manages the attacker's states
 	if (attacker->IsSearchingEnemy())
 	{
-		attacker->SetDestination(nearestEnemy->GetLocation());
+		nearestEnemy = FindNearestEnemy(*attacker);
 
-		if (attacker->IsInSameRoom(*nearestEnemy))
-		{
-			if ((attacker->HasLineOfSight(*nearestEnemy, map)) && (attacker->GetArms() > 0))
-				weapons.push_back(attacker->Attack(nearestEnemy->GetLocation()));
+		if (nearestEnemy->GetRoom() != -1)
+			attacker->SetDestination(nearestEnemy->GetLocation());
 
+		if (attacker->CanAttack(*nearestEnemy, map))
+			weapons.push_back(attacker->Attack(nearestEnemy->GetLocation()));
+
+		if ((ManhattanDistance(attacker->GetLocation(), nearestEnemy->GetLocation()) <= 2) || (attacker->GetArms() == 0))
 			attacker->GetActiveState()->Transform(attacker); // SearchEnemyState -> SearchShelterState
-		}
-
 	}
 	else if (attacker->IsSearchingShelter())
 	{
 		nearestShelter = FindNearestShelter(attacker);
-		attacker->SetDestination(nearestShelter);
 
-		if (attacker->GetLocation() == nearestShelter)
-			attacker->GetActiveState()->Transform(attacker); // SearchShelterState -> SearchEnemyState
+		attacker->SetDestination(nearestShelter);
+		attacker->GetActiveState()->Transform(attacker); // SearchShelterState -> SearchEnemyState
 	}
 
 	// Checks whether the team courier needs to be called 
-
 	if (attacker->GetArms() == 0)
 	{
 		attacker->CallCourier(teamCourier, ARMS, TAKE);
-		attacker->SetDestination(teamCourier->GetLocation());
+		//attacker->SetDestination(teamCourier->GetLocation());
 	}
 	else if (IsAllyRequiresSupply(*attacker, ARMS))
 	{
 		attacker->CallCourier(teamCourier, ARMS, GIVE);
-		attacker->SetDestination(teamCourier->GetLocation());
+		//attacker->SetDestination(teamCourier->GetLocation());
 	}
 
 	if ((attacker->GetHealth() < MAX_HEALTH) && (attacker->GetMeds() == 0))
 	{
 		attacker->CallCourier(teamCourier, MEDS, TAKE);
-		attacker->SetDestination(teamCourier->GetLocation());
+		//attacker->SetDestination(teamCourier->GetLocation());
 	}
 	else if (IsAllyRequiresSupply(*attacker, MEDS))
 	{
 		attacker->CallCourier(teamCourier, MEDS, GIVE);
-		attacker->SetDestination(teamCourier->GetLocation());
+		//attacker->SetDestination(teamCourier->GetLocation());
 	}
 
-	MoveAttacker(attacker, FindNextLocation(attacker));
+	if (attacker->GetDestination() != attacker->GetLocation())
+		MoveAttacker(attacker, FindNextLocation(attacker));
 }
 
 /// <summary>
@@ -1100,6 +1054,8 @@ void IterateCourier(Courier* courier)
 {
 	Attacker* nearestAlly;
 	Position nearestSupply;
+
+	courier->SetDestination(courier->GetLocation());
 
 	// Manages the courier's states
 	if (courier->IsSearchingSupply())
@@ -1124,16 +1080,17 @@ void IterateCourier(Courier* courier)
 	{
 		nearestAlly = FindNearestAlly(*courier);
 
-		if (courier->GetLocation() == nearestAlly->GetLocation())
+		courier->SetDestination(nearestAlly->GetLocation());
+
+		if (ManhattanDistance(courier->GetLocation(), nearestAlly->GetLocation()) <= 1)
 		{
 			courier->TradeSupply(nearestAlly);
 			courier->GetActiveState()->Transform(courier); // SearchAllyState -> SearchSupplyState
 		}
-		else
-			courier->SetDestination(nearestAlly->GetLocation());
 	}
 
-	MoveCourier(courier, FindNextLocation(courier));
+	if (courier->GetDestination() != courier->GetLocation())
+		MoveCourier(courier, FindNextLocation(courier));
 }
 
 /// <summary>
@@ -1142,9 +1099,8 @@ void IterateCourier(Courier* courier)
 /// <param name="teamColor">The team's color</param>
 void IterateTeam(int teamColor)
 {
-	string currentTeam = teamColor == RED_TEAM ? "RED TEAM:\n" : "BLUE TEAM:\n", winningTeam;
+	string currentTeam = teamColor == RED_TEAM ? "RED TEAM:\n" : "BLUE TEAM:\n";
 	Position teammateLocation;
-	int deadTeammates = 0;
 
 	// Iterates team members
 	cout << currentTeam;
@@ -1155,14 +1111,18 @@ void IterateTeam(int teamColor)
 		if ((attackers[i] == nullptr) || (attackers[i]->GetTeam() != teamColor))
 			continue;
 
+		// Kills the attacker
 		if (attackers[i]->GetHealth() <= 0)
 		{
 			teammateLocation = attackers[i]->GetLocation();
 			map[(int)teammateLocation.GetRow()][(int)teammateLocation.GetColumn()] = attackers[i]->GetSteppedOn();
-			cout << "Attacker [" << (i + 1) << "] is dead\n";
-			
+
+			if (attackers[i]->GetTeam() == RED_TEAM)
+				deadRedTeammates++;
+			else
+				deadBlueTeammates++;
+
 			attackers[i] = nullptr;
-			deadTeammates++;
 		}
 		else
 		{
@@ -1178,14 +1138,18 @@ void IterateTeam(int teamColor)
 		if ((couriers[i] == nullptr) || (couriers[i]->GetTeam() != teamColor))
 			continue;
 
+		// Kills the courier
 		if (couriers[i]->GetHealth() <= 0)
 		{
 			teammateLocation = couriers[i]->GetLocation();
 			map[(int)teammateLocation.GetRow()][(int)teammateLocation.GetColumn()] = SPACE;
-			cout << "Courier is dead\n";
+
+			if (couriers[i]->GetTeam() == RED_TEAM)
+				deadRedTeammates++;
+			else
+				deadBlueTeammates++;
 
 			couriers[i] = nullptr;
-			deadTeammates++;
 		}
 		else
 		{
@@ -1193,18 +1157,6 @@ void IterateTeam(int teamColor)
 			cout << " State: " << couriers[i]->GetStateName() << "\n";
 			IterateCourier(couriers[i]);
 		}
-	}
-
-	// Checks whether the entire team is dead (and the game is over)
-	if (deadTeammates == TEAM_SIZE)
-	{
-		gameOver = true;
-
-		winningTeam = teamColor == RED_TEAM ? "Blue" : "Red";
-		cout << "Game Over. " << winningTeam << " team wins.\n";
-		Sleep(3000);
-
-		exit(0);
 	}
 }
 
@@ -1233,7 +1185,7 @@ void display()
 
 	DrawMap();
 
-	for (int i = 0; i < weapons.size(); i++)
+	for (int i = 0; i < (int)weapons.size(); i++)
 		weapons[i]->Draw();
 
 	glutSwapBuffers(); // show all
@@ -1241,6 +1193,7 @@ void display()
 void idle()
 {
 	Position weaponLocation;
+	string winningTeam;
 
 	if (restart)
 		Restart();
@@ -1248,15 +1201,25 @@ void idle()
 	system("CLS"); // Clears the console
 
 	// Iterates both teams
-	if (!gameOver)
-		IterateTeam(RED_TEAM);
-	if (!gameOver)
-		IterateTeam(BLUE_TEAM);
+	IterateTeam(RED_TEAM);
+	IterateTeam(BLUE_TEAM);
+
+	// Checks whether the entire team is dead (and the game is over)
+	if ((deadRedTeammates == TEAM_SIZE) || (deadBlueTeammates == TEAM_SIZE))
+	{
+		gameOver = true;
+
+		winningTeam = deadRedTeammates == TEAM_SIZE ? "Blue" : "Red";
+		cout << "Game Over. " << winningTeam << " team wins.\n";
+		Sleep(3000);
+
+		exit(0);
+	}
 
 	Sleep(100);
 
 	// Iterates spawned weaponry
-	for (int i = 0; i < weapons.size(); i++)
+	for (int i = 0; i < (int)weapons.size(); i++)
 	{
 		weapons[i]->Move();
 

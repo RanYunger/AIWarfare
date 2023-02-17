@@ -48,6 +48,4 @@ public:
 
 	// Methods
 	void TakeDamage(int damage);
-
-	bool IsInSameRoom(NPC other);
 };

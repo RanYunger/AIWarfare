@@ -29,7 +29,17 @@ int NPC::GetMeds() { return meds; }
 void NPC::SetMeds(int m) { meds = m; }
 
 // Constructors & Destructors
-NPC::NPC() {}
+NPC::NPC()
+{
+	SetLocation(EMPTY_POSITION);
+	SetDestination(EMPTY_POSITION);
+	SetActiveState(nullptr);
+	SetHealth(MAX_HEALTH);
+	SetTeam(-1);
+	SetRoom(-1);
+	SetArms(-1);
+	SetMeds(-1);
+}
 NPC::NPC(Position l, int t, int r, int a, int m)
 {
 	SetLocation(l);
@@ -59,10 +69,3 @@ void NPC::TakeDamage(int damage)
 		meds = meds - 1 <= 0 ? 0 : meds - 1;
 	}
 }
-
-/// <summary>
-/// Indicates whether the NPC is in a room with another NPC.
-/// </summary>
-/// <param name="other">The other NPC to check proximity with</param>
-/// <returns>True if the two NPCs are in the same room, False otherwise</returns>
-bool NPC::IsInSameRoom(NPC other) { return (room != -1) && (room == other.GetRoom()); }

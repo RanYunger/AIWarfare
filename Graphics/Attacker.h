@@ -40,4 +40,5 @@ public:
 	Weapon* Attack(Position destination);
 
 	bool HasLineOfSight(NPC enemyNPC, int map[MAP_DIMENSION][MAP_DIMENSION]);
+	bool CanAttack(NPC enemyNPC, int map[MAP_DIMENSION][MAP_DIMENSION]);
 };
