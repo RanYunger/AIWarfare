@@ -48,4 +48,5 @@ public:
 
 	// Methods
 	void TakeDamage(int damage);
+	void Heal();
 };

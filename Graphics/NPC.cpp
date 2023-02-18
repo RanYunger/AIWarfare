@@ -59,13 +59,13 @@ NPC::~NPC() {}
 /// Inflicts damage to the NPC's health.
 /// </summary>
 /// <param name="damage">The damage to inflict</param>
-void NPC::TakeDamage(int damage)
-{
-	health = health - damage <= 0 ? 0 : health - damage;
+void NPC::TakeDamage(int damage) { health = health - damage <= 0 ? 0 : health - damage; }
 
-	if (meds > 0)
-	{
-		health = health + HEALTH_BOOST >= MAX_HEALTH ? MAX_HEALTH : health + HEALTH_BOOST;
-		meds = meds - 1 <= 0 ? 0 : meds - 1;
-	}
+/// <summary>
+/// Uses med to increase health.
+/// </summary>
+void NPC::Heal()
+{
+	health = health + HEALTH_BOOST >= MAX_HEALTH ? MAX_HEALTH : health + HEALTH_BOOST;
+	meds = meds - 1 <= 0 ? 0 : meds - 1;
 }

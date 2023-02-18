@@ -22,7 +22,7 @@ using namespace std;
 
 // Fields
 bool gameOver = false, restart = false, securityMapVisible = false, pathFound = false;
-int deadRedTeammates = 0, deadBlueTeammates = 0;
+int deadRedNPCs = 0, deadBlueNPCs = 0;
 int map[MAP_DIMENSION][MAP_DIMENSION] = { 0 };
 double securityMap[MAP_DIMENSION][MAP_DIMENSION] = { 0 };
 
@@ -367,7 +367,7 @@ bool IsWeaponActive(Weapon* weapon)
 		{
 			attackers[i]->TakeDamage(weapon->GetDamage()); // Weapon damage calculated by distance
 
-			return false; // Weapon hit and should dissappear.
+			return false;
 		}
 	}
 
@@ -381,7 +381,7 @@ bool IsWeaponActive(Weapon* weapon)
 		{
 			couriers[i]->TakeDamage(weapon->GetDamage()); // Weapon damage calculated by distance
 
-			return false; // Weapon hit and should dissappear.
+			return false;
 		}
 	}
 
@@ -658,8 +658,8 @@ void PlaceObstacles(Room* room)
 	{
 		do
 		{
-			row = roomRowStart + rand() % room->GetHeight();
-			column = roomColumnStart + rand() % room->GetWidth();
+			row = (roomRowStart + 3) + rand() % (room->GetHeight() - 3);
+			column = (roomColumnStart + 3) + rand() % (room->GetWidth() - 3);
 		} while (map[row][column] != SPACE);
 
 		map[row][column] = WALL;
@@ -834,7 +834,7 @@ void DrawMap()
 	for (int row = 0; row < MAP_DIMENSION; row++)
 		for (int column = 0; column < MAP_DIMENSION; column++)
 		{
-			securityFactor = (MAX_ITERATIONS - securityMap[row][column] - 1) / (double)MAX_ITERATIONS;
+			securityFactor = 0.3 + (1 - securityMap[row][column]);
 
 			switch (map[row][column])
 			{
@@ -880,8 +880,8 @@ void Restart()
 	securityMapVisible = false;
 	pathFound = false;
 
-	deadRedTeammates = 0;
-	deadBlueTeammates = 0;
+	deadRedNPCs = 0;
+	deadBlueNPCs = 0;
 
 	supplies.clear();
 	weapons.clear();
@@ -965,7 +965,7 @@ bool IsAllyRequiresSupply(Attacker attacker, int supply)
 	for (int i = 0; i < ATTACKERS_IN_TEAM; i++)
 	{
 		// Validation
-		if ((attackers[i]->GetTeam() != attacker.GetTeam()) || (attackers[i]->GetHealth() == 0))
+		if ((attackers[i] == nullptr) || (attackers[i]->GetTeam() != attacker.GetTeam()))
 			continue;
 
 		if ((supply == ARMS) && (attackers[i]->GetArms() == 0))
@@ -989,7 +989,7 @@ void IterateAttacker(Attacker* attacker)
 
 	// Finds the team courier
 	for (int i = 0; i < 2 * COURIERS_IN_TEAM; i++)
-		if (couriers[i]->GetTeam() == attacker->GetTeam())
+		if ((couriers[i] != nullptr) && (couriers[i]->GetTeam() == attacker->GetTeam()))
 		{
 			teamCourier = couriers[i];
 			break;
@@ -1008,39 +1008,38 @@ void IterateAttacker(Attacker* attacker)
 		if (attacker->CanAttack(*nearestEnemy, map))
 			weapons.push_back(attacker->Attack(nearestEnemy->GetLocation()));
 
-		if ((ManhattanDistance(attacker->GetLocation(), nearestEnemy->GetLocation()) <= 2) || (attacker->GetArms() == 0))
+		if ((attacker->GetHealth() < (20 + rand() % 10)) || (attacker->GetArms() == 0))
 			attacker->GetActiveState()->Transform(attacker); // SearchEnemyState -> SearchShelterState
 	}
 	else if (attacker->IsSearchingShelter())
 	{
 		nearestShelter = FindNearestShelter(attacker);
 
-		attacker->SetDestination(nearestShelter);
-		attacker->GetActiveState()->Transform(attacker); // SearchShelterState -> SearchEnemyState
+		if (attacker->GetLocation() == nearestShelter)
+			attacker->GetActiveState()->Transform(attacker); // SearchShelterState -> SearchEnemyState
+		else
+			attacker->SetDestination(nearestShelter);
 	}
 
 	// Checks whether the team courier needs to be called 
 	if (attacker->GetArms() == 0)
-	{
 		attacker->CallCourier(teamCourier, ARMS, TAKE);
-		//attacker->SetDestination(teamCourier->GetLocation());
-	}
 	else if (IsAllyRequiresSupply(*attacker, ARMS))
-	{
 		attacker->CallCourier(teamCourier, ARMS, GIVE);
-		//attacker->SetDestination(teamCourier->GetLocation());
-	}
 
-	if ((attacker->GetHealth() < MAX_HEALTH) && (attacker->GetMeds() == 0))
+	if (attacker->GetHealth() < MAX_HEALTH)
 	{
-		attacker->CallCourier(teamCourier, MEDS, TAKE);
-		//attacker->SetDestination(teamCourier->GetLocation());
+		if (attacker->GetMeds() > 0)
+			attacker->Heal();
+		else
+			attacker->CallCourier(teamCourier, MEDS, TAKE);
 	}
 	else if (IsAllyRequiresSupply(*attacker, MEDS))
-	{
 		attacker->CallCourier(teamCourier, MEDS, GIVE);
-		//attacker->SetDestination(teamCourier->GetLocation());
-	}
+
+	// Prevents overdrawing in joint paths 
+	if (attacker->GetLocation() == teamCourier->GetLocation())
+		attacker->SetDestination(attacker->GetLocation());
 
 	if (attacker->GetDestination() != attacker->GetLocation())
 		MoveAttacker(attacker, FindNextLocation(attacker));
@@ -1118,9 +1117,9 @@ void IterateTeam(int teamColor)
 			map[(int)teammateLocation.GetRow()][(int)teammateLocation.GetColumn()] = attackers[i]->GetSteppedOn();
 
 			if (attackers[i]->GetTeam() == RED_TEAM)
-				deadRedTeammates++;
+				deadRedNPCs++;
 			else
-				deadBlueTeammates++;
+				deadBlueNPCs++;
 
 			attackers[i] = nullptr;
 		}
@@ -1145,9 +1144,9 @@ void IterateTeam(int teamColor)
 			map[(int)teammateLocation.GetRow()][(int)teammateLocation.GetColumn()] = SPACE;
 
 			if (couriers[i]->GetTeam() == RED_TEAM)
-				deadRedTeammates++;
+				deadRedNPCs++;
 			else
-				deadBlueTeammates++;
+				deadBlueNPCs++;
 
 			couriers[i] = nullptr;
 		}
@@ -1205,11 +1204,11 @@ void idle()
 	IterateTeam(BLUE_TEAM);
 
 	// Checks whether the entire team is dead (and the game is over)
-	if ((deadRedTeammates == TEAM_SIZE) || (deadBlueTeammates == TEAM_SIZE))
+	if ((deadRedNPCs == TEAM_SIZE) || (deadBlueNPCs == TEAM_SIZE))
 	{
 		gameOver = true;
 
-		winningTeam = deadRedTeammates == TEAM_SIZE ? "Blue" : "Red";
+		winningTeam = deadRedNPCs == TEAM_SIZE ? "Blue" : "Red";
 		cout << "Game Over. " << winningTeam << " team wins.\n";
 		Sleep(3000);
 

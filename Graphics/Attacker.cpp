@@ -64,7 +64,7 @@ void Attacker::CallCourier(Courier* courier, int supply, int transaction)
 /// <returns>The spawned weapon</returns>
 Weapon* Attacker::Attack(Position destination)
 {
-	double angle = atan2(fabs(location.GetColumn() - destination.GetColumn()), fabs(location.GetRow() - destination.GetRow())) * (180 / PI);
+	double angle = (10.0 +(rand() % 20)) + atan2(fabs(location.GetColumn() - destination.GetColumn()), fabs(location.GetRow() - destination.GetRow())) * (180 / PI);
 
 	arms = arms - 1 <= 0 ? 0 : arms - 1;
 
@@ -92,8 +92,11 @@ bool Attacker::HasLineOfSight(NPC enemyNPC, int map[MAP_DIMENSION][MAP_DIMENSION
 	otherRow = enemyNPC.GetLocation().GetRow();
 	otherColumn = enemyNPC.GetLocation().GetColumn();
 
-	x = myRow; dx = abs(otherRow - myRow);
-	y = myColumn; dy = abs(otherColumn - myColumn);
+	x = myRow;
+	dx = fabs(otherRow - myRow);
+	y = myColumn;
+	dy = fabs(otherColumn - myColumn);
+
 	err = dx - dy;
 
 	sx = (myRow < otherRow) ? 1 : -1;
@@ -103,7 +106,7 @@ bool Attacker::HasLineOfSight(NPC enemyNPC, int map[MAP_DIMENSION][MAP_DIMENSION
 	{
 		if (map[(int)x][(int)y] == WALL)
 			return false; // Line of sight is blocked
-		if ((abs(x - otherRow) < 0.1) && (abs(y - otherColumn) < 0.1))
+		if ((fabs(x - otherRow) < 0.1) && (fabs(y - otherColumn) < 0.1))
 			return true; // Line of sight is unblocked
 
 		err2 = 2 * err;
@@ -130,7 +133,7 @@ bool Attacker::HasLineOfSight(NPC enemyNPC, int map[MAP_DIMENSION][MAP_DIMENSION
 /// <returns>True if the attacker can attack the enemy NPC, False otherwise</returns>
 bool Attacker::CanAttack(NPC enemyNPC, int map[MAP_DIMENSION][MAP_DIMENSION])
 {
-	return (enemyNPC.GetRoom() != -1) && (room == enemyNPC.GetRoom()) && (HasLineOfSight(enemyNPC, map)) && (arms > 0);
+	return (room != -1) && (room == enemyNPC.GetRoom()) && (HasLineOfSight(enemyNPC, map)) && (arms > 0);
 }
 
 string Attacker::GetStateName()
