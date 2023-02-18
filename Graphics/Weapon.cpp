@@ -51,7 +51,7 @@ Weapon::Weapon(Position l, double a, int t, bool i)
 	SetTeam(t);
 	SetIsCombustable(i);
 
-	SetDamage(i ? (int)GRENADE_SECURITY_WEIGHT : HEALTH_BOOST);
+	SetDamage(i ? GRENADE_DAMAGE : BULLET_DAMAGE);
 	SetDirectionRow(sin(a));
 	SetDirectionColumn(cos(a));
 }
@@ -70,7 +70,7 @@ void Weapon::Move()
 	if ((currentRow != previousRow) || (currentColumn != previousColumn))
 	{
 		previousLocation = location;
-		damage = damage - 1 <= 0 ? 0 : damage - 1;
+		damage = damage - BULLET_STEP_DAMAGE_REDUCTION <= 0 ? 0 : damage - BULLET_STEP_DAMAGE_REDUCTION;
 	}
 
 	location.SetRow(currentRow);

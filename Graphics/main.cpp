@@ -14,8 +14,6 @@
 #include "Node.h"
 #include "NodesComparator.h"
 #include "Room.h"
-#include "SearchEnemyState.h"
-#include "SearchSupplyState.h"
 #include "Settings.h"
 
 using namespace std;
@@ -146,8 +144,7 @@ Position FindNextLocation(NPC* npc)
 		if (greyNodes.empty())
 		{
 			pathFound = false;
-			/* DEBNUGGING PURPOSES: ENABLE LINES TO SEE WHEN A CHARACTER CANNOT REACH HIS DESTINATION */
-			cout << "Grey nodes vector is empty when it shouldn't be in 'FindNextLocation'\n";
+			cout << "No path was found to destination (" << destination.GetRow() << ", " << destination.GetColumn() << ") in 'FindNextLocation'\n";
 			Sleep(3000);
 			return source;
 		}
@@ -173,7 +170,7 @@ Position FindNextLocation(NPC* npc)
 
 	if (iterationsCounter >= MAX_ITERATIONS)
 	{
-		cout << "Too many iterations to find path\n";
+		cout << "Too many iterations to find path in 'FindNextLocation'\n";
 		Sleep(1500);
 		return source;
 	}
@@ -224,9 +221,6 @@ NPC* FindNearestEnemy(Attacker attacker)
 		}
 	}
 
-	if (nearestEnemy == nullptr)
-		cout << "No enemy was found in 'FindNearestEnemy'\n";
-
 	return nearestEnemy;
 }
 
@@ -253,9 +247,6 @@ Attacker* FindNearestAlly(Courier courier)
 			nearestDistance = currentDistance;
 		}
 	}
-
-	if (nearestAlly == nullptr)
-		cout << "No ally was found in 'FindNearestAlly'\n";
 
 	return nearestAlly;
 }
@@ -286,10 +277,7 @@ Position FindNearestSupply(Courier* courier)
 
 	// Validation
 	if ((int)supplies.size() == 0)
-	{
-		cout << "No supplies to collect\n";
 		return courier->GetLocation();
-	}
 
 	for (int i = 0; i < (int)supplies.size(); i++)
 	{
@@ -346,13 +334,18 @@ Position FindNearestShelter(NPC* npc)
 /// <returns>True if the weapon is still active, False otherwise</returns>
 bool IsWeaponActive(Weapon* weapon)
 {
-	Position weaponLocation = weapon->GetLocation();
+	Position weaponLocation;
 
-	// Checks if the weapon can no longer cause damage
+	// Validation
+	if (weapon == nullptr)
+		return false;
+
+	// Checks whether the weapon can no longer inflict damage
 	if (weapon->GetDamage() <= 0)
 		return false;
 
-	// Checks if the weapon hits a wall
+	// Checks whether the weapon has hit a wall
+	weaponLocation = weapon->GetLocation();
 	if (map[(int)weaponLocation.GetRow()][(int)weaponLocation.GetColumn()] == WALL)
 		return false;
 
@@ -440,20 +433,20 @@ bool IsValidNPCSpawn(Position spawnLocation, int teamColor)
 	for (int i = 0; i < 2 * ATTACKERS_IN_TEAM; i++)
 	{
 		// Validation
-		if (attackers[i] == nullptr)
+		if ((attackers[i] == nullptr) || (attackers[i]->GetTeam() != teamColor))
 			continue;
 
-		if ((attackers[i]->GetTeam() == teamColor) && (attackers[i]->GetLocation() == spawnLocation))
+		if (attackers[i]->GetLocation() == spawnLocation)
 			return false;
 	}
 
 	for (int i = 0; i < 2 * COURIERS_IN_TEAM; i++)
 	{
 		// Validation
-		if (couriers[i] == nullptr)
+		if ((couriers[i] == nullptr) || (couriers[i]->GetTeam() != teamColor))
 			continue;
 
-		if ((couriers[i]->GetTeam() == teamColor) && (couriers[i]->GetLocation() == spawnLocation))
+		if (couriers[i]->GetLocation() == spawnLocation)
 			return false;
 	}
 
@@ -733,8 +726,8 @@ void InitRooms()
 	{
 		do
 		{
-			centerRow = EDGE_OFFSET + rand() % (MAP_DIMENSION - (4 * EDGE_OFFSET));
-			centerColumn = EDGE_OFFSET + rand() % (MAP_DIMENSION - (4 * EDGE_OFFSET));
+			centerRow = EDGE_OFFSET + rand() % (MAP_DIMENSION - (2 * EDGE_OFFSET));
+			centerColumn = EDGE_OFFSET + rand() % (MAP_DIMENSION - (2 * EDGE_OFFSET));
 			height = EDGE_OFFSET + rand() % ROOM_HEIGHT;
 			width = EDGE_OFFSET + rand() % ROOM_WIDTH;
 		} while (IsRoomOverlapping(centerRow, centerColumn, height, width));
@@ -783,7 +776,8 @@ void InitGame()
 		spawnLocation = RandomizeNPCSpawn(i < ATTACKERS_IN_TEAM ? rooms[redTeamSpawnRoom] : rooms[blueTeamSpawnRoom],
 			i < ATTACKERS_IN_TEAM ? RED_TEAM : BLUE_TEAM);
 
-		attackers[i] = new Attacker(spawnLocation, i < ATTACKERS_IN_TEAM ? RED_TEAM : BLUE_TEAM, i < ATTACKERS_IN_TEAM ? redTeamSpawnRoom : blueTeamSpawnRoom, 1, 0);
+		attackers[i] = new Attacker(spawnLocation, i < ATTACKERS_IN_TEAM ? RED_TEAM : BLUE_TEAM,
+			i < ATTACKERS_IN_TEAM ? redTeamSpawnRoom : blueTeamSpawnRoom, INIT_ATTACKER_ARMS, INIT_ATTACKER_MEDS);
 
 		map[(int)spawnLocation.GetRow()][(int)spawnLocation.GetColumn()] = attackers[i]->GetTeam();
 	}
@@ -794,8 +788,8 @@ void InitGame()
 		spawnLocation = RandomizeNPCSpawn(i < COURIERS_IN_TEAM ? rooms[redTeamSpawnRoom] : rooms[blueTeamSpawnRoom],
 			i < COURIERS_IN_TEAM ? RED_TEAM : BLUE_TEAM);
 
-		couriers[i] = new Courier(spawnLocation, i < COURIERS_IN_TEAM ? RED_TEAM : BLUE_TEAM, i < COURIERS_IN_TEAM ? redTeamSpawnRoom : blueTeamSpawnRoom,
-			MAX_ARMS, MAX_MEDS);
+		couriers[i] = new Courier(spawnLocation, i < COURIERS_IN_TEAM ? RED_TEAM : BLUE_TEAM,
+			i < COURIERS_IN_TEAM ? redTeamSpawnRoom : blueTeamSpawnRoom, INIT_COURIER_ARMS, INIT_COURIER_MEDS);
 
 		map[(int)spawnLocation.GetRow()][(int)spawnLocation.GetColumn()] = couriers[i]->GetTeam();
 	}
@@ -983,7 +977,7 @@ bool IsAllyRequiresSupply(Attacker attacker, int supply)
 /// <param name="attacker">The attacker to activate</param>
 void IterateAttacker(Attacker* attacker)
 {
-	NPC* nearestEnemy = nullptr;
+	NPC* nearestEnemy = FindNearestEnemy(*attacker);
 	Courier* teamCourier = nullptr;
 	Position nearestShelter;
 
@@ -1000,13 +994,8 @@ void IterateAttacker(Attacker* attacker)
 	// Manages the attacker's states
 	if (attacker->IsSearchingEnemy())
 	{
-		nearestEnemy = FindNearestEnemy(*attacker);
-
-		if (nearestEnemy->GetRoom() != -1)
+		if ((nearestEnemy != nullptr) && (nearestEnemy->GetRoom() != -1))
 			attacker->SetDestination(nearestEnemy->GetLocation());
-
-		if (attacker->CanAttack(*nearestEnemy, map))
-			weapons.push_back(attacker->Attack(nearestEnemy->GetLocation()));
 
 		if ((attacker->GetHealth() < (20 + rand() % 10)) || (attacker->GetArms() == 0))
 			attacker->GetActiveState()->Transform(attacker); // SearchEnemyState -> SearchShelterState
@@ -1021,25 +1010,32 @@ void IterateAttacker(Attacker* attacker)
 			attacker->SetDestination(nearestShelter);
 	}
 
+	// Checks whether the attack can attack
+	if ((nearestEnemy != nullptr) && (attacker->CanAttack(*nearestEnemy, map)))
+		weapons.push_back(attacker->Attack(nearestEnemy->GetLocation()));
+
 	// Checks whether the team courier needs to be called 
-	if (attacker->GetArms() == 0)
-		attacker->CallCourier(teamCourier, ARMS, TAKE);
-	else if (IsAllyRequiresSupply(*attacker, ARMS))
-		attacker->CallCourier(teamCourier, ARMS, GIVE);
-
-	if (attacker->GetHealth() < MAX_HEALTH)
+	if (teamCourier != nullptr)
 	{
-		if (attacker->GetMeds() > 0)
-			attacker->Heal();
-		else
-			attacker->CallCourier(teamCourier, MEDS, TAKE);
-	}
-	else if (IsAllyRequiresSupply(*attacker, MEDS))
-		attacker->CallCourier(teamCourier, MEDS, GIVE);
+		if (attacker->GetArms() == 0)
+			attacker->CallCourier(teamCourier, ARMS, TAKE);
+		else if (IsAllyRequiresSupply(*attacker, ARMS))
+			attacker->CallCourier(teamCourier, ARMS, GIVE);
 
-	// Prevents overdrawing in joint paths 
-	if (attacker->GetLocation() == teamCourier->GetLocation())
-		attacker->SetDestination(attacker->GetLocation());
+		if (attacker->GetHealth() < MAX_HEALTH)
+		{
+			if (attacker->GetMeds() > 0)
+				attacker->Heal();
+			else
+				attacker->CallCourier(teamCourier, MEDS, TAKE);
+		}
+		else if (IsAllyRequiresSupply(*attacker, MEDS))
+			attacker->CallCourier(teamCourier, MEDS, GIVE);
+
+		// Prevents overdrawing in joint paths 
+		if (attacker->GetLocation() == teamCourier->GetLocation())
+			attacker->SetDestination(attacker->GetLocation());
+	}
 
 	if (attacker->GetDestination() != attacker->GetLocation())
 		MoveAttacker(attacker, FindNextLocation(attacker));
@@ -1060,7 +1056,11 @@ void IterateCourier(Courier* courier)
 	if (courier->IsSearchingSupply())
 	{
 		nearestSupply = FindNearestSupply(courier);
-		courier->SetDestination(nearestSupply);
+
+		if (((int)supplies.size() == 0) && (nearestSupply == courier->GetLocation()))
+			courier->GetActiveState()->Transform(courier); // SearchSupplyState -> SearchAllyState
+		else
+			courier->SetDestination(nearestSupply);
 
 		if (courier->IsCalled())
 		{
@@ -1078,6 +1078,10 @@ void IterateCourier(Courier* courier)
 	else if (courier->IsSearchingAlly())
 	{
 		nearestAlly = FindNearestAlly(*courier);
+
+		// Validation
+		if (nearestAlly == nullptr)
+			return;
 
 		courier->SetDestination(nearestAlly->GetLocation());
 
@@ -1220,6 +1224,10 @@ void idle()
 	// Iterates spawned weaponry
 	for (int i = 0; i < (int)weapons.size(); i++)
 	{
+		// Validation
+		if (weapons[i] == nullptr)
+			continue;
+
 		weapons[i]->Move();
 
 		weaponLocation = weapons[i]->GetLocation();
